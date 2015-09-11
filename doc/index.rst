@@ -1,12 +1,12 @@
 .. vim: set fileencoding=utf-8 :
-.. @author: Manuel Guenther <Manuel.Guenther@idiap.ch>
-.. @date:   Tue Aug 26 09:42:18 CEST 2014
+.. @author: Manuel Gunther <mgunther@vast.uccs.edu>
+.. @date:   Fri Sep 11 14:53:52 MDT 2015
 
-.. _bob.db.caspeal:
+.. _bob.db.janus:
 
-============================================
- CAS-PEAL Database Identification Protocols
-============================================
+=========================================
+ JANUS Database Identification Protocols
+=========================================
 
 .. todolist::
 
@@ -25,4 +25,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

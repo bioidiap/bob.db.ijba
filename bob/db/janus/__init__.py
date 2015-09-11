@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
-# @author: Manuel Guenther <Manuel.Guenther@idiap.ch>
-# @date:   Mon Dec 10 14:29:51 CET 2012
-#
-# Copyright (C) 2011-2012 Idiap Research Institute, Martigny, Switzerland
+# @author: Manuel Gunther <mgunther@vast.uccs.edu>
+# @date:   Fri Sep 11 14:53:52 MDT 2015
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,11 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This is the Bob database entry for the CAS-PEAL database.
+"""This is the Bob database entry for the JANUS database.
 """
 
 from .query import Database
-from .models import File, Annotation, Template
+from .models import File, Annotation, Template, Protocol, ProtocolPurpose
 
 def get_config():
   """Returns a string containing the configuration information.
