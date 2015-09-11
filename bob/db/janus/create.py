@@ -112,7 +112,7 @@ def add_protocols(session, files, directory, add_splits, verbose):
 
       # add files
       assert path_id in files
-      template.files.append(files[path_id])
+      template.add_file(files[path_id])
 
   if add_splits:
     # Now, add the training splits protocols
@@ -139,7 +139,7 @@ def add_protocols(session, files, directory, add_splits, verbose):
 
           # add files
           assert path_id in files
-          template.files.append(files[path_id])
+          template.add_file(files[path_id])
 
 
 def create_tables(args):
