@@ -35,11 +35,7 @@ def _update(session, field):
 def add_files(session, directory, add_splits, verbose):
   """Adds all files of the JANUS database"""
   clients = set()
-#  templates = {}
   files = {}
-#  filenames = ['gallery.csv', 'probe.csv']
-#  if add_splits:
-#    filenames += ["split{s}/{p}_{s}.csv".format(s=s, p=p) for s in range(1,11) for p in ("train", "gallery", "probe")]
 
   filename = os.path.join(directory, 'protocol', 'metadata.csv')
 
@@ -76,7 +72,7 @@ def add_files(session, directory, add_splits, verbose):
   return files
 
 def add_protocols(session, files, directory, add_splits, verbose):
-  """Adds the protocols for the JANUS database"""
+  """Adds the templates and protocols for the JANUS database"""
 
   def _read_file(filename):
     """Reads the given file and yields the template id, the subject id and path_id (path + sighting_id)"""
@@ -150,6 +146,7 @@ def create_tables(args):
   Annotation.metadata.create_all(engine)
   Template.metadata.create_all(engine)
   Protocol.metadata.create_all(engine)
+  ProtocolPurpose.metadata.create_all(engine)
 
 
 # Driver API

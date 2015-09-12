@@ -15,8 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module provides the Database interface allowing the user to query the
-CAS-PEAL database.
+"""This module provides the Database interface allowing the user to query the JANUS database.
 """
 
 import os
@@ -35,9 +34,9 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
   and for the data itself inside the database.
   """
 
-  def __init__(self, original_directory = None, original_extension = ''):
+  def __init__(self, original_directory = None):
     # call base class constructor
-    bob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE, File, original_directory=original_directory, original_extension=original_extension)
+    bob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE, File, original_directory=original_directory, original_extension=None)
 
   def provides_file_set_for_protocol(self, protocol=None):
     """As this database provides the file set interface (i.e., each probe contains several files) for all protocols, this function returns ``True`` throughout.
@@ -51,14 +50,14 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
 
 
   def groups(self, protocol='split1'):
-    """Returns a list of groups for the given protocol
+    """Returns a list of groups for the given protocol.
 
     Keyword Parameters:
 
     protocol
       One of the available protocol names, see :py:meth:`protocol_names`.
 
-    Returns: a list of groups for the given protocol
+    Returns: a list of groups for the given protocol.
     """
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
     # for A and B protocol there is only the dev group, for the others it is world and dev
@@ -66,18 +65,18 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
 
 
   def clients(self, groups=None, protocol='split1'):
-    """Returns a list of Client objects for the specific query by the user.
+    """Returns a list of :py:class:`Client` objects for the specific query by the user.
 
     Keyword Parameters:
 
     groups
-      One or several groups to which the models belong ('world', 'dev', 'eval').
+      One or several groups to which the models belong ``('world', 'dev', 'eval')``.
       If not specified, all groups are returned.
 
     protocol
       One of the available protocol names, see :py:meth:`protocol_names`.
 
-    Returns: A list containing all the Client objects which have the desired properties.
+    Returns: A list containing all the :py:class:`Client` objects which have the desired properties.
     """
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
     groups = self.check_parameters_for_validity(groups, "group", self.groups())
@@ -95,7 +94,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
 
 
   def client_ids(self, groups=None, protocol='split1'):
-    """Returns a list of client ids for the specific query by the user.
+    """Returns a list of client ids (aka. subject_id) for the specific query by the user.
 
     Keyword Parameters:
 
@@ -117,7 +116,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     Keyword Parameters:
 
     groups
-      Ignored; only model ids from the dev group will be used.
+      Ignored; only model ids from the 'dev' group will be used.
 
     protocol
       One of the available protocol names, see :py:meth:`protocol_names`.
@@ -137,9 +136,13 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
 
 
   def template_ids(self):
-    """Returns a list of valid Template ids, where Templates can be used both for model enrollment or probing."""
+    """Returns a list of valid template ids, where :py:class:`Template`'s can be used both for model enrollment or probing.
+
+    This function returns a list of actual template_ids.
+    The according templates might differ between the protocols.
+    """
     query = self.query(Template)
-    return [template.template_id for template in query]
+    return self.uniquify([template.template_id for template in query])
 
 
   def get_client_id_from_file_id(self, file_id, **kwargs):
@@ -148,7 +151,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     Keyword Parameters:
 
     file_id
-      The file_id to consider
+      The file_id to consider, which is expected to be the unique :py:attr:`File.id`.
 
     Returns: The client_id attached to the given file_id
     """
@@ -176,18 +179,18 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return query.first().client_id
 
 
-  def objects(self, groups=None, protocol='split1', purposes=None, model_ids=None, media_ids=None, frames=None, annotated=None):
+  def objects(self, groups=None, protocol='split1', purposes=None, model_ids=None, media_ids=None, frames=None):
     """Using the specified restrictions, this function returns a list of File objects.
 
     Keyword Parameters:
 
-    groups : str or [str]
+    groups : str or [str] or ``None``
       One or several groups to which the models belong ('world', 'dev').
 
     protocol : str
       One of the available protocol names, see :py:meth:`protocol_names`.
 
-    purposes : str or [str]
+    purposes : str or [str] or ``None``
       One or several purposes for which files should be retrieved ('enroll', 'probe').
       Note: this field is ignored for group 'world'.
 
@@ -202,20 +205,12 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     frames : int or [int] or ``None``
       If given, only the video files with the given frame number are returned.
       Note that the images of the database will be ignored, when this option is selected.
-
-    annotated : ``True``, ``False`` or ``None``
-      For some files, the facial landmark annotations are absent (if the image does not contain a face) or incomplete (when the face is shown in profile view).
-      With this parameter, you can define, how to handle these annotations.
-      If ``True``, only files that are fully annotated are returned.
-      If ``False``, only files that are not fully annotated are returned.
-      If ``None``, all files are returned.
     """
 
     # check that every parameter is as expected
     groups = self.check_parameters_for_validity(groups, "group", ProtocolPurpose.group_choices)
     purposes = self.check_parameters_for_validity(purposes, "purpose", ProtocolPurpose.purpose_choices)
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
-    assert annotated in (True, False, None)
 
     # assure that the given model ids are in an iteratable container
     if isinstance(model_ids, int): model_ids = (model_ids,)
@@ -276,9 +271,8 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return self.uniquify([file for query in queries for file in query])
 
 
-  def object_sets(self, groups='dev', protocol='split1', purposes='probe', model_ids=None, media_ids=None, frames=None, annotated=None):
-    """Using the specified restrictions, this function returns a list of a list of File objects.
-    Each sub-list contains all files belonging to a certain probe template.
+  def object_sets(self, groups='dev', protocol='split1', purposes='probe', model_ids=None, media_ids=None, frames=None):
+    """Using the specified restrictions, this function returns a list of :py:class:`Template` objects.
 
     Keyword Parameters:
 
@@ -300,20 +294,12 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     frames : int or [int] or ``None``
       If given, only the video files with the given frame number are returned.
       Note that the images of the database will be ignored, when this option is selected.
-
-    annotated : ``True``, ``False`` or ``None``
-      For some files, the facial landmark annotations are absent (if the image does not contain a face) or incomplete (when the face is shown in profile view).
-      With this parameter, you can define, how to handle these annotations.
-      If ``True``, only files that are fully annotated are returned.
-      If ``False``, only files that are not fully annotated are returned.
-      If ``None``, all files are returned.
     """
 
     # check that every parameter is as expected
     groups = self.check_parameters_for_validity(groups, "group", ProtocolPurpose.group_choices[1:])
     purposes = self.check_parameters_for_validity(purposes, "purpose", ProtocolPurpose.purpose_choices[2:])
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
-    assert annotated in (True, False, None)
 
     # assure that the given model ids are in an iteratable container
     if isinstance(model_ids, int): model_ids = (model_ids,)
@@ -328,48 +314,28 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
                 .join(Protocol)\
                 .filter(Protocol.name == protocol)
 
-    # TODO: When criteria are selected, assure that only files with the according criteria are returned within the FileSet
-
     # filter other criteria
     if media_ids is not None: query = query.filter(File.media_id.in_(media_ids))
     if frames is not None: query = query.filter(File.frame.in_(frames))
 
-    # TODO: implement the sub-selection of Files based on the annotated parameter
-
     return list(query)
 
-    # we have collected all queries, now extract the File objects
-    files = self.uniquify([file for query in queries for file in query])
-
-    if annotated is not None:
-      # query all desired annotations
-      annotations = list(self.query(Annotation).join(File).filter(File.id.in_([f.id for f in files])))
-      # short-cut annotations in dict structure
-      annotations = {a.file_id : a for a in annotations}
-      if annotated:
-        # all files must be completely annotated
-        return [f for f in files if f.id in annotations and all([k is not None for v in annotations[f.id]().values() for k in v])]
-      else:
-        # all files must contain missing annotations
-        return [f for f in files if f.id not in annotations or any([k is None for v in annotations[f.id]().values() for k in v])]
-
-    return files
 
 
   def annotations(self, file):
-    """Returns the annotations for the given file id as a dictionary {'reye':(y,x), 'leye':(y,x)}."""
+    """Returns the annotations for the given :py:class:`File` object as a dictionary, see :py:class:`Annotation` for details."""
     self.assert_validity()
     # return annotations as obtained from the __call__ command of the Annotation class
-    return file.annotation() if file.annotation is not None else None
+    return file.annotation()
 
 
   def protocol_names(self):
-    """Returns all registered protocol names"""
+    """Returns all registered protocol names, which are usually ``['NoTrain'] + ['split%d' for d in range(1,11)]``"""
     return [str(p.name) for p in self.protocols()]
 
 
   def protocols(self):
-    """Returns all registered protocols"""
+    """Returns all registered :py:class:`Protocol` objects."""
     return list(self.query(Protocol))
 
 
@@ -379,7 +345,17 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
 
 
   def original_file_name(self, file, check_existence = True):
-    """Returns the filename with the correct filename extension."""
+    """Returns the original image file name with the correct file name extension.
+    To be able to call this function, the ``original_directory`` must have been specified in the :py:class:`Database` constructor.
+
+    Keyword parameters:
+
+    file : :py:class:`File`
+      The ``File`` object to get the original file name from.
+
+    check_existence : bool
+      If set to True (the default), the existence of the original image file is checked, prior to returning the files name.
+    """
     if not self.original_directory:
       raise ValueError("The original_directory was not specified in the constructor.")
     # extract file name

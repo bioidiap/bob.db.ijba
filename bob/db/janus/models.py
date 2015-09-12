@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Table models and functionality for the CAS-PEAL database.
+"""Table models and functionality for the JANUS database.
 """
 
 import sqlalchemy
@@ -31,7 +31,11 @@ Base = declarative_base()
 
 
 class Client(Base):
-  """The clients of the JANUS database"""
+  """The subjects of the JANUS database.
+
+  Each subject contains exactly the ID that is identical with the subject_id of the JANUS database.
+  Furthermore, after creation of the database, the list of :py:class:`Template`'s and the list of :py:class:`File`'s of this subject is available using ``self.templates`` and ``self.files``.
+  """
   __tablename__ = 'client'
 
   id = Column(Integer, primary_key=True)
@@ -41,8 +45,25 @@ class Client(Base):
 
 
 class Annotation(Base):
-  """Annotations of the CAS-PEAL database consists only of the left and right eye positions.
-  There is exactly one annotation for each file."""
+  """Annotations of the JANUS database consists at least of the ``topleft`` corner of the bounding box and its according ``size``.
+  There is exactly one annotation for each :py:class:`File`, which after creation of the database can be obtained using ``self.file``.
+  Note that there might be several annotations for each physical image file.
+  Please use only the faces specified by the bounding box, all others do not belong to the face recognition protocol.
+
+  Additional to the bounding box, three facial feature points might be labeled, the left and right eye ``leye, reye`` as well as the nose base ``nose`` (which is actually the nose tip).
+  Also, a face ``yaw`` angle is annotated.
+
+  Finally, some flags with integral values are given.
+  For the exact meaning of these values, please refer to the JANUS database report:
+
+  - ``forhead-visible``
+  - ``eyes-visible``
+  - ``nose-mouth-visible``
+  - ``indoor``
+  - ``gender``
+  - ``skin-tone``
+  - ``age``
+  """
   __tablename__ = 'annotation'
 
   id = Column(Integer, primary_key=True)
@@ -78,8 +99,6 @@ class Annotation(Base):
     self.tl_y = annotations[1]
     self.size_x = annotations[2]
     self.size_y = annotations[3]
-#    self.br_x = self.tl_x + annotations[2] if annotations[2] is not None else None
-#    self.br_y = self.tl_y + annotations[3] if annotations[3] is not None else None
     self.re_x = annotations[4]
     self.re_y = annotations[5]
     self.le_x = annotations[6]
@@ -97,8 +116,8 @@ class Annotation(Base):
 
   def __call__(self):
     """Returns the annotations of this database in a dictionary, such as {'reye' : (re_y, re_x), 'leye' : (le_y, le_x), 'topleft' : (tl_y, tl_x), 'bottomright' : (br_y, br_x)} and some more.
-    The actual annotations might change between versions.
-    Note that some of the annotations might be ``None`` or tuples of ``None``.
+    The actual annotations might change between Files.
+    Note that some of the annotations might be ``None``, tuples of ``None`` or absent.
     """
     annots = {
       'topleft' : (self.tl_y, self.tl_x),
@@ -120,26 +139,37 @@ class Annotation(Base):
 
     return annots
 
-
   def __repr__(self):
     return "<Annotation('%d')>" % self.file_id
 
 
 class File(Base, bob.db.verification.utils.File):
-  """Information about the files of the JANUS database. Each file includes
+  """Information about the files of the JANUS database.
 
-  * the media id
-  * the frame number (might be None if not a video)
-  * the template id (i.e., to which template this file belongs)
-  * the client id (aka, the subject id), which is stored in the template
-  * the path
+  Note that there might be several ``File`` objects for each physical file of the JANUS database.
+  To make the :py:meth:`make_path` function generate a unique filename for this actual ``File`` object, the ``sighting_id`` might be appended to the real file name.
+
+  Each File includes:
+
+  * the ``media_id`` (the name of the image or video without frame number)
+  * the ``sighting_id`` (to identify different faces in the same image)
+  * the ``frame`` number (might be None if not a video)
+  * the ``client_id`` (aka, the subject id)
+  * the ``path`` excluding filename extension
+  * the filename ``extension`` of the original file
+  * a numerical ``id``, used as a unique key for the SQL query only
+
+  Additionally, some fields will be available, once the database is created:
+
+  * ``templates``: a list of :py:class:`Template`'s, in which this file is used
+  * ``annotation``: the :py:class:`Annotation`, which belongs to this file
+
   """
   import itertools
 
   __tablename__ = 'file'
 
   id = Column(Integer, primary_key=True)
-#  path = Column(String(100), unique=True)
   path = Column(String(100))
   extension = Column(Enum(".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG"))
 
@@ -165,15 +195,15 @@ class File(Base, bob.db.verification.utils.File):
 
   def make_path(self, directory = None, extension = None, add_sighting_id = True):
     """Wraps the current path so that a complete path is formed.
-    The file name will be a unique file name, as there might be several file objects with the same path.
-    To get the original file name, please use the :py:meth:`Database.original_file_name` function instead.
+    By default, the file name will be a unique file name, as there might be several ``File`` objects with the same path.
+    To get the original file name, please use the :py:meth:`Database.original_file_name` function instead, or set the ``add_sighting_id`` flag to ``False``.
 
     Keyword parameters:
 
-    directory : str or None
+    directory : str or ``None``
       An optional directory name that will be prefixed to the returned result.
 
-    extension : str or None
+    extension : str or ``None``
       An optional extension that will be suffixed to the returned filename.
       The extension normally includes the leading ``.`` character as in ``.jpg`` or ``.hdf5``.
 
@@ -181,7 +211,7 @@ class File(Base, bob.db.verification.utils.File):
       By default, the sighting_id is added to generate a unique path.
       If set to false, the sighting_id will not be added.
 
-    Returns a string containing the newly generated file path.
+    Returns a string containing the newly generated file path, which by default is unique.
     """
 
     # assure that directory and extension are actually strings
@@ -202,8 +232,16 @@ file_template_association = Table(
 
 
 class Template(Base):
-  """A file list of File objects belonging to the same template ID (there are several templates per person).
-  A template can serve for training, model enrollment, or for probing."""
+  """A ``Template`` contains a list of :py:class:`File` objects belonging to the same subject (there might be several templates per subject).
+  These are listed in the ``self.files`` field.
+
+  A ``Template`` can serve for training, model enrollment, or for probing.
+  Each template belongs specifically to a certain protocol, as the template_id in the original file lists might differ for different protocols.
+  The according :py:class:`ProtocolPurpose` can be obtained using the ``self.protocol_purpose`` after creation of the database.
+
+  Note that the ``template_id`` corresponds to the template_id of the file lists, while the ``id`` is only used as a unique key for querying the database.
+  For convenience, the template also contains a ``path``, which is a concatenation of the first :py:attr:`File.media_id` of the first file, and the ``self.template_id``, making it unique (at least per protocol).
+  """
   __tablename__ = 'template'
 
   id = Column(Integer, primary_key=True)
@@ -220,7 +258,6 @@ class Template(Base):
     self.template_id = template_id
     self.client_id = subject_id
     self.protocol_purpose_id = protocol_purpose_id
-#    self.path = "%s-%s" % (str(subject_id), str(template_id))
 
   def add_file(self, file):
     self.files.append(file)
@@ -230,7 +267,13 @@ class Template(Base):
 
 
 class Protocol(Base):
-  """The probe protocols of the CAS-PEAL database. Training and enrollment is identical for all protocols of CAS-PEAL."""
+  """The protocols of the JANUS database.
+
+  There are 11 different protocols defined.
+  The first, which we call ``NoTrain``, contains no training set, but all 500 subjects are used as gallery (enrollment) and probing.
+  The remaining 10 protocols split up these Templates into training, enrollment and probe, using 10 randomized splits.
+  Please report the recognition rates for each of the splits independently.
+  """
   __tablename__ = 'protocol'
 
   # query protocols start from index 2
@@ -247,7 +290,8 @@ class Protocol(Base):
 
 
 class ProtocolPurpose(Base):
-  """This class defines the groups and purposes, i.e., which templates should be used for which puopose in  each protocol"""
+  """This class defines the groups and purposes, i.e., which templates should be used for which purpose in each protocol.
+  """
   __tablename__ = "protocol_purpose"
 
   purpose_choices = ("train", "enroll", "probe")

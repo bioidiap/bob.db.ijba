@@ -6,8 +6,8 @@
  User's Guide
 ==============
 
-This package contains the access API and descriptions for the JANUS CS2 database.
-The actual raw data is currently only available for the performers in the JANUS project, but will hopefully be made public after that project finishes.
+This package contains the access API and descriptions for the JANUS CS2 database (also known as IARPA Janus Benchmark A -- IJB-A).
+The actual raw data can be downloaded from the original web page: http://www.nist.gov/itl/iad/ig/facechallenges.cfm (note that not everyone might be eligible for downloading the data).
 
 Included in the database, there are list files defining identification experiments.
 The is one protocol, which we call `'NoTrain'`, that consists of a split of the data into a gallery of 500 subjects and a probe group.
