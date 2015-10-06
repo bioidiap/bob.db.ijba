@@ -16,13 +16,13 @@ version = open("version.txt").read().rstrip()
 # parameters that define our package.
 setup(
 
-    name='bob.db.janus',
+    name='bob.db.ijba',
     version=version,
-    description='JANUS Database Access API for Bob',
-    url='http://github.com/bioidiap/bob.db.caspeal',
+    description='IJB-A Database Access API for Bob',
+    url='http://github.com/bioidiap/bob.db.ijba',
     license='GPLv3',
-    author='Manuel Guenther',
-    author_email='manuel.guenther@idiap.ch',
+    author='Tiago de Freitas Pereira',
+    author_email='tiago.pereira@idiap.ch',
     long_description=open('README.rst').read(),
 
     # This line is required for any distutils based packaging.
@@ -40,7 +40,7 @@ setup(
     entry_points = {
       # bob database declaration
       'bob.db': [
-        'janus = bob.db.janus.driver:Interface',
+        'ijba = bob.db.ijba.driver:Interface',
       ],
     },
 

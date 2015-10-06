@@ -119,7 +119,7 @@ def path(args):
 class Interface(BaseInterface):
 
   def name(self):
-    return 'janus'
+    return 'ijba'
 
   def version(self):
     import pkg_resources  # part of setuptools
@@ -140,7 +140,7 @@ class Interface(BaseInterface):
     import argparse
 
     subparsers = self.setup_parser(parser,
-      "JANUS database", docs)
+      "IJBA database", docs)
 
     # example: get the "create" action from a submodule
     from .create import add_command as create_command

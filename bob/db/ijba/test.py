@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""A few checks for the JANUS database.
+"""A few checks for the ijba database.
 """
 
 import os, sys
 import unittest
-import bob.db.janus
+import bob.db.ijba
 import random
 
 def db_available(test):
@@ -35,7 +35,7 @@ def db_available(test):
     if os.path.exists(dbfile):
       return test(*args, **kwargs)
     else:
-      raise SkipTest("The database file '%s' is not available; did you forget to run 'bob_dbmanage.py %s create' ?" % (dbfile, 'janus'))
+      raise SkipTest("The database file '%s' is not available; did you forget to run 'bob_dbmanage.py %s create' ?" % (dbfile, 'ijba'))
 
   return wrapper
 
@@ -46,7 +46,7 @@ ALL_PROTOCOLS = ['NoTrain'] + PROTOCOLS
 @db_available
 def test_clients():
   # Checks the clients
-  db = bob.db.janus.Database()
+  db = bob.db.ijba.Database()
 
   # The number of groups and protocols
   assert set(db.protocol_names()) == set(ALL_PROTOCOLS)
@@ -71,7 +71,7 @@ def test_clients():
 @db_available
 def test_objects():
   # Checks the objects
-  db = bob.db.janus.Database()
+  db = bob.db.ijba.Database()
 
   # test that the objects() function returns reasonable numbers of files
   assert all(len(db.objects(protocol=protocol)) == 25817 for protocol in ['NoTrain'] + PROTOCOLS[1:])
@@ -96,7 +96,7 @@ def test_objects():
 @db_available
 def test_object_sets():
   # Checks the objects
-  db = bob.db.janus.Database()
+  db = bob.db.ijba.Database()
 
   # test that the object_sets() function returns reasonable numbers of Template objects
   probe_templates = [5152, 1806, 1798, 1732, 1807, 1766, 1657, 1652, 1883, 1788, 1753]
@@ -106,7 +106,7 @@ def test_object_sets():
 @db_available
 def test_annotations():
   # Tests that the annotations are available for all files
-  db = bob.db.janus.Database()
+  db = bob.db.ijba.Database()
 
   all_keys = set(['topleft', 'size', 'bottomright', 'forehead-visible', 'eyes-visible', 'nose-mouth-visible', 'indoor', 'gender', 'skin-tone', 'age', 'leye', 'reye', 'nose', 'yaw'])
 
@@ -125,8 +125,8 @@ def test_annotations():
 def test_driver_api():
   # Tests the bob_dbmanage.py driver interface
   from bob.db.base.script.dbmanage import main
-  assert main('janus dumplist --self-test'.split()) == 0
-  assert main('janus dumplist --group=dev --purpose=probe --template-id=133 --protocol=NoTrain --self-test'.split()) == 0
-  assert main('janus checkfiles --self-test'.split()) == 0
-  assert main('janus reverse frame/30125_00224 --self-test'.split()) == 0
-  assert main('janus path 42 --self-test'.split()) == 0
+  assert main('ijba dumplist --self-test'.split()) == 0
+  assert main('ijba dumplist --group=dev --purpose=probe --template-id=133 --protocol=NoTrain --self-test'.split()) == 0
+  assert main('ijba checkfiles --self-test'.split()) == 0
+  assert main('ijba reverse frame/30125_00224 --self-test'.split()) == 0
+  assert main('ijba path 42 --self-test'.split()) == 0

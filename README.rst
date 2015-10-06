@@ -2,35 +2,20 @@
 .. @author: Manuel Gunther <mgunther@vast.uccs.edu>
 .. @date:   Tue Sep  8 15:05:38 MDT 2015
 
-.. image:: http://img.shields.io/badge/docs-stable-yellow.png
-   :target: http://pythonhosted.org/bob.db.janus/index.html
-.. image:: http://img.shields.io/badge/docs-latest-orange.png
-   :target: https://www.idiap.ch/software/bob/docs/latest/bioidiap/bob.db.janus/master/index.html
-.. image:: https://travis-ci.org/bioidiap/bob.db.janus.svg?branch=master
-   :target: https://travis-ci.org/bioidiap/bob.db.janus
-.. image:: https://coveralls.io/repos/bioidiap/bob.db.janus/badge.png
-   :target: https://coveralls.io/r/bioidiap/bob.db.janus
-.. image:: https://img.shields.io/badge/github-master-0000c0.png
-   :target: https://github.com/bioidiap/bob.db.janus/tree/master
-.. image:: http://img.shields.io/pypi/v/bob.db.janus.png
-   :target: https://pypi.python.org/pypi/bob.db.janus
-.. image:: http://img.shields.io/pypi/dm/bob.db.janus.png
-   :target: https://pypi.python.org/pypi/bob.db.janus
-.. image:: https://img.shields.io/badge/original-data--files-a000a0.png
-   :target: http://www.nist.gov/itl/iad/ig/facechallenges.cfm
 
 ==================================
- JANUS Database Interface for Bob
+ IJB-A Database Interface for Bob
 ==================================
 
-This package contains an interface for the evaluation protocols of the JANUS CS2 database, also known as the *IARPA Janus Benchmark A* (IJB-A) database.
+This package contains an interface for the evaluation protocols of the *IARPA Janus Benchmark A* (IJB-A) database.
 This package does not contain the original image data for the database.
 The original data should be obtained using the link above.
 
 The IJB-A database is a mixture of frontal and non-frontal images and videos (provided as single frames) from 500 different identities.
 In many of the images and video frames, there are several people visible, but only the ones that are annotated with a bounding box should be taken into consideration.
 For both model enrollment as well as for probing, images and video frames of one person are combined into so-called Templates.
-There are eleven different protocols implemented, one only providing Templates for model enrollment and probing (no training set), and 10 splits each defining training, enrollment and probe data.
+
+The database is divided in 10 splits each defining training, enrollment and probe data.
 
 This package implements the database interface including all its particularities:
 

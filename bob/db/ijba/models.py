@@ -175,7 +175,7 @@ class File(Base, bob.db.verification.utils.File):
 
   media_id = Column(Integer)
   sighting_id = Column(Integer)
-  client_id = Column(Integer)
+  client_id = Column(Integer, ForeignKey('client.id'))
   frame = Column(Integer)
 
   # one-to-one relationship between annotations and files
@@ -277,7 +277,8 @@ class Protocol(Base):
   __tablename__ = 'protocol'
 
   # query protocols start from index 2
-  protocol_choices = ["NoTrain"] + ['split%d' % d for d in range(1,11)]
+  protocol_choices = ['search_split%d' % d for d in range(1,11)]
+  protocol_choices += ['compare_split%d' % d for d in range(1,11)]  
 
   id = Column(Integer, primary_key=True)
   name = Column(Enum(*protocol_choices), unique=True)
