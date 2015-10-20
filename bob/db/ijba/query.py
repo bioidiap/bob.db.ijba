@@ -49,7 +49,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return True
 
 
-  def groups(self, protocol='split1'):
+  def groups(self, protocol='search_split1'):
     """Returns a list of groups for the given protocol.
 
     Keyword Parameters:
@@ -64,7 +64,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return ProtocolPurpose.group_choices[1:] if protocol == 'NoTrain' else ProtocolPurpose.group_choices
 
 
-  def clients(self, groups=None, protocol='split1'):
+  def clients(self, groups=None, protocol='search_split1'):
     """Returns a list of :py:class:`Client` objects for the specific query by the user.
 
     Keyword Parameters:
@@ -93,7 +93,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return list(query)
 
 
-  def client_ids(self, groups=None, protocol='split1'):
+  def client_ids(self, groups=None, protocol='search_split1'):
     """Returns a list of client ids (aka. subject_id) for the specific query by the user.
 
     Keyword Parameters:
@@ -110,7 +110,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return [client.id for client in self.clients(groups, protocol)]
 
 
-  def model_ids(self, groups=None, protocol='split1'):
+  def model_ids(self, groups=None, protocol='search_split1'):
     """Returns a list of model ids for the specific query by the user.
 
     Keyword Parameters:
@@ -162,6 +162,23 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return query.first().client_id
 
 
+  def get_client_id_from_path(self, path):
+    """Returns the client_id attached to the given path
+
+    Keyword Parameters:
+
+    path
+      The path to consider :py:attr:`File.path`.
+
+    Returns: The client_id attached to the given file_id
+    """
+    query = self.query(File)\
+                .filter(File.path == path)
+
+    assert query.count() == 1
+    return query.first().client_id
+
+
   def get_client_id_from_model_id(self, model_id):
     """Returns the client_id attached to the given model_id
 
@@ -175,11 +192,12 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     query = self.query(Template)\
                 .filter(Template.template_id == model_id)
 
+    
     assert all(t.client_id == query.first().client_id for t in query)
     return query.first().client_id
 
 
-  def objects(self, groups=None, protocol='split1', purposes=None, model_ids=None, media_ids=None, frames=None):
+  def objects(self, groups=None, protocol='search_split1', purposes=None, model_ids=None, media_ids=None, frames=None):
     """Using the specified restrictions, this function returns a list of File objects.
 
     Keyword Parameters:
@@ -271,7 +289,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return self.uniquify([file for query in queries for file in query])
 
 
-  def object_sets(self, groups='dev', protocol='split1', purposes='probe', model_ids=None, media_ids=None, frames=None):
+  def object_sets(self, groups='dev', protocol='search_split1', purposes='probe', model_ids=None, media_ids=None, frames=None):
     """Using the specified restrictions, this function returns a list of :py:class:`Template` objects.
 
     Keyword Parameters:

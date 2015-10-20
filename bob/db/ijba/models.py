@@ -245,7 +245,7 @@ class Template(Base):
   __tablename__ = 'template'
 
   id = Column(Integer, primary_key=True)
-  template_id = Column(Integer)
+  template_id = Column(String(100)) #TIAGO: Here I will add a tag called T for the data from the training set
   client_id = Column(Integer, ForeignKey('client.id')) # aka the subject ID
   protocol_purpose_id = Column(Integer, ForeignKey("protocol_purpose.id"))
   path = Column(String(100)) # only used to write into score files
@@ -263,7 +263,7 @@ class Template(Base):
     self.files.append(file)
     # set template path, if not yet specified
     if self.path is None:
-      self.path = "%s-%d" % (file.media_id, self.template_id)
+      self.path = "%s-%s" % (file.media_id, self.template_id)
 
 
 class Protocol(Base):

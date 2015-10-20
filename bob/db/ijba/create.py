@@ -59,10 +59,10 @@ def add_files(session, directory, verbose):
         clients.add(subject_id)
 
       # now, create a File
-      path = splits[2]
+      path =  splits[2]
       # unique file id is the path id and the sighting_id
       #path_id = "%s-%s" % (path, splits[4])
-      path_id = path
+      path_id,_ = os.path.splitext(path)
       if verbose > 2: print("... Adding file", path)
       if path_id not in files:
         file = _update(session, File(path, subject_id, int(splits[3]), int(splits[4]), int(splits[5]) if splits[5] else None))
@@ -76,13 +76,21 @@ def add_files(session, directory, verbose):
   # finally, return the files that we have created
   return files
 
-def add_protocols(session, files, directory, search_protocol=True, verbose=True, logs=True):
+def add_protocols(session, files, directory, verbose=True, logs=True):
   """Adds the templates and protocols for the JANUS database"""
 
   files_not_found                 = set() #Some logs
   
   def _read_file(filename):
     """Reads the given file and yields the template id, the subject id and path_id (path + sighting_id)"""
+    
+    #GAMBIARRA(Search the definition onlines). 
+    #Since there is the same template id, with different files, in the train and search files, I will add the KEYWORD 'T' in the beggining of the template_id
+    if (filename.find('train')>=0):
+      T_tag = 'T'
+    else:
+      T_tag = ''
+    
     with open(os.path.join(directory, 'protocol', filename)) as f:
       # skip the first line
       _ = f.readline()
@@ -91,19 +99,32 @@ def add_protocols(session, files, directory, search_protocol=True, verbose=True,
         splits = splits[0:24] #Removing the facial hair parameter        
         #assert len(splits) == 24, splits
         # we only care about the template id.
-        #yield int(splits[0]), int(splits[1]), "%s-%s" % (splits[2], splits[4])
-        yield int(splits[0]), int(splits[1]), splits[2]
-
+        
+        client_id = int(splits[1])
+        
+        #IN THE TRAINING FILE, THE CLIENT ID IS 0. HERE, I WILL TRY TO INFER THE CLIENT IF VIA FILE NAME        
+        path,_ = os.path.splitext(splits[2])
+        if(client_id != 0):         
+          #yield int(splits[0]), int(splits[1]), "%s-%s" % (path, splits[4])
+          yield str(splits[0])+T_tag, int(splits[1]), path
+        else:
+          try:
+            query = session.query(File).filter(File.path == path)
+            assert query.count() == 1
+            client_id = query.first().client_id
+            
+            #yield int(splits[0]), int(client_id), "%s-%s" % (path, splits[4])
+            yield str(splits[0])+T_tag, int(client_id), path
+          except AssertionError:
+            yield '0',0,path
+          
+        
 
   # Now, add the training splits protocols
   for split in [str(i) for i in range(1,11)]:
     # create and add protocol
 
-    if(search_protocol):
-      protocol = _update(session, Protocol("search_split%s" % split))
-    else:
-      protocol = _update(session, Protocol("compare_split%s" % split))
-
+    protocol = _update(session, Protocol("search_split%s" % split))
     
     if verbose: print("Adding Protocol", protocol.name)
 
@@ -116,12 +137,15 @@ def add_protocols(session, files, directory, search_protocol=True, verbose=True,
         filename = os.path.join("split%s" % split, "train_%s.csv" % (split))
       else:
         filename = os.path.join("split%s" % split, "search_%s_%s.csv" % (purpose, split))
-        if (not search_protocol):
-          if (purpose=="gallery"):
-            filename = os.path.join("split%s" % split, "verify_metadata_%s.csv" % (split))
         
       templates = {}
       for template_id, subject_id, path_id in _read_file(filename):
+      
+        if subject_id==0:
+          files_not_found.add(path_id)#LOGIN THE FILES THAT IS IN THE TRAINING SET, BUT NOT IN THE METADATA.csv
+          if verbose: print("Ignoring the file {0}, because there is no client connected to him/her".format(path_id))
+          continue
+        
         # create template with given IDs for the given protocol purpose
         if template_id not in templates:
           if verbose > 1: print(". Adding template", template_id)
@@ -181,8 +205,7 @@ def create(args):
   create_tables(args)
   session = session_try_nolock(args.type, args.files[0], echo=(args.verbose > 2))
   templates = add_files(session, args.directory, args.verbose)
-  add_protocols(session, templates, args.directory, True, args.verbose, args.logs)
-  add_protocols(session, templates, args.directory, False, args.verbose, args.logs)
+  add_protocols(session, templates, args.directory, args.verbose, args.logs)
   session.commit()
   session.close()
 
