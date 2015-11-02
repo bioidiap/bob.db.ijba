@@ -30,6 +30,10 @@ import bob.db.verification.utils
 Base = declarative_base()
 
 
+""" Defining protocols. Yes, they are static """
+GROUPS    = ('world', 'dev')
+
+
 class Client(Base):
   """The subjects of the JANUS database.
 
@@ -247,17 +251,14 @@ class Template(Base):
   id = Column(Integer, primary_key=True)
   template_id = Column(String(100)) #TIAGO: Here I will add a tag called T for the data from the training set
   client_id = Column(Integer, ForeignKey('client.id')) # aka the subject ID
-  protocol_purpose_id = Column(Integer, ForeignKey("protocol_purpose.id"))
   path = Column(String(100)) # only used to write into score files
 
   client = relationship("Client", backref=backref("templates", order_by=id), uselist=False)
-  protocol_purpose = relationship("ProtocolPurpose", backref=backref("templates", order_by=id))
   files = relationship("File", secondary=file_template_association, backref=backref("templates", order_by=id))
 
-  def __init__(self, template_id, subject_id, protocol_purpose_id):
+  def __init__(self, template_id, subject_id):
     self.template_id = template_id
     self.client_id = subject_id
-    self.protocol_purpose_id = protocol_purpose_id
 
   def add_file(self, file):
     self.files.append(file)
@@ -290,24 +291,43 @@ class Protocol(Base):
     return "<Protocol('%d', '%s')>" % (self.id, self.name)
 
 
-class ProtocolPurpose(Base):
-  """This class defines the groups and purposes, i.e., which templates should be used for which purpose in each protocol.
+
+
+class Protocol_Template_Association(Base):
   """
-  __tablename__ = "protocol_purpose"
+  Describe the protocols
+  """
+  __tablename__ = 'protocol_template_association'
 
-  purpose_choices = ("train", "enroll", "probe")
-  group_choices = ("world", "dev")
+  protocol_id = Column('protocol_id', Integer, ForeignKey('protocol.id'), primary_key=True)
+  template_id = Column('template_id', Integer, ForeignKey('template.id'), primary_key=True)  
+  group    = Column('group', Enum(*GROUPS), primary_key=True)
 
-  id = Column(Integer, primary_key=True)
-  purpose = Column(Enum(*purpose_choices))
-  sgroup = Column(Enum(*group_choices))
-  protocol_id = Column(Integer, ForeignKey("protocol.id"))
+  def __init__(self, protocol_id, template_id, group):
+    self.protocol_id  = protocol_id
+    self.template_id  = template_id
+    self.group     = group
 
-  # The protocol using this ProtocolPurpose
-  protocol = relationship("Protocol", backref=backref("purposes", order_by=id))
 
-  def __init__(self, purpose, protocol_id):
-    if purpose == "gallery": purpose = "enroll"
-    self.purpose = purpose
-    self.sgroup = self.group_choices[purpose != self.purpose_choices[0]]
-    self.protocol_id = protocol_id
+
+class Comparisons(Base):
+  """
+  Describe the comparisons between templates
+  
+  BY DEFINITION TEMPLATE_A IS ENROLL and TEMPLATE_B IS PROBE
+  
+  """
+  __tablename__ = 'comparisons'
+
+  protocol = Column('protocol_id', Integer, ForeignKey('protocol.id'), primary_key=True)
+  template_A = Column('template_A', Integer, ForeignKey('protocol_template_association.template_id'), primary_key=True)
+  template_B = Column('template_B', Integer, ForeignKey('protocol_template_association.template_id'), primary_key=True)  
+
+  def __init__(self, protocol, template_A, template_B):
+    self.protocol    = protocol
+    self.template_A  = template_A
+    self.template_B  = template_B
+
+
+
+

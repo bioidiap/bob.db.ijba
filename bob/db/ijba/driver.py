@@ -149,17 +149,13 @@ class Interface(BaseInterface):
     from .query import Database
     db = Database()
 
-    from .models import ProtocolPurpose
+    #from .models import ProtocolPurpose
 
     # the "dumplist" action
     parser = subparsers.add_parser('dumplist', help=dumplist.__doc__)
     parser.add_argument('-d', '--directory', help="if given, this path will be prepended to every entry returned.")
     parser.add_argument('-e', '--extension', help="if given, this extension will be appended to every entry returned.")
-    parser.add_argument('-a', '--add-sighting-id', action='store_true', help="if selected, unique path names will be created by adding the sighting id.")
-    parser.add_argument('-g', '--group', help="if given, this value will limit the output files to those belonging to a particular group.", choices = ProtocolPurpose.group_choices)
-    parser.add_argument('-p', '--protocol', default='NoTrain', help="limits the dump to a particular subset of the data that corresponds to the given protocol.", choices = db.protocol_names() if db.is_valid() else ())
-    parser.add_argument('-u', '--purpose', help="if given, this value will limit the output files to those designed for the given purposes.", choices=ProtocolPurpose.purpose_choices)
-    parser.add_argument('-m', '--template-id', type=int, help="if given, this value will limit the output files to those  of the given template id.", choices=db.template_ids() if db.is_valid() else ())
+
     parser.add_argument('--self-test', dest="selftest", action='store_true', help=argparse.SUPPRESS)
     parser.set_defaults(func=dumplist) #action
 

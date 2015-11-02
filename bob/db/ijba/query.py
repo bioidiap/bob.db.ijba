@@ -128,7 +128,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     query = self.query(Template)\
                 .join(ProtocolPurpose)\
                 .filter(ProtocolPurpose.sgroup == 'dev')\
-                .filter(ProtocolPurpose.purpose == 'enroll')\
+                .filter(ProtocolPurpose.purpose == 'probe')\
                 .join(Protocol)\
                 .filter(Protocol.name == protocol)
 
@@ -226,8 +226,8 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     """
 
     # check that every parameter is as expected
-    groups = self.check_parameters_for_validity(groups, "group", ProtocolPurpose.group_choices)
-    purposes = self.check_parameters_for_validity(purposes, "purpose", ProtocolPurpose.purpose_choices)
+    #groups = self.check_parameters_for_validity(groups, "group", ProtocolPurpose.group_choices)
+    #purposes = self.check_parameters_for_validity(purposes, "purpose", ProtocolPurpose.purpose_choices)
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
 
     # assure that the given model ids are in an iteratable container
@@ -243,6 +243,21 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     def _filter_models(query):
       return _filter_others(query if model_ids is None else query.filter(Template.template_id.in_(model_ids)))
 
+    def _filter_probes(query):
+      #Getting the original template id in order to get the 
+      templates_ids = []
+      if not model_ids is None:
+        query_templates = self.query(Template)\
+          .outerjoin(Protocol_Template_Association)\
+          .outerjoin(Protocol)\
+          .filter(Protocol.name==protocol) \
+          .filter(Template.template_id.in_(model_ids))
+      
+        templates_ids = [t.id for t in query_templates.all()]
+        
+      #Now selecting the probes for a given template. This is useful for the comparison protocol
+      return _filter_others(query if model_ids is None else query.filter(Comparisons.template_A.in_(templates_ids)))
+
 
     # collect the queries
     queries = []
@@ -250,39 +265,42 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
       queries.append(
         _filter_models(
           self.query(File)\
-              .join(Template, File.templates)\
-              .join(ProtocolPurpose)\
-              .filter(ProtocolPurpose.sgroup=='world')\
-              .join(Protocol)\
-              .filter(Protocol.name == protocol)
+              .outerjoin(Template, File.templates)\
+              .outerjoin(Protocol_Template_Association)\
+              .outerjoin(Protocol)\
+              .filter(Protocol_Template_Association.group=="world") \
+              .filter(Protocol.name==protocol)
         )
       )
 
     if 'dev' in groups:
-      if 'enroll' in purposes:
+      if 'enroll' in purposes:        
         queries.append(
-          _filter_models(
+            _filter_models(
             self.query(File)\
-                .join(Template, File.templates)\
-                .join(ProtocolPurpose)\
-                .filter(ProtocolPurpose.sgroup=='dev')\
-                .filter(ProtocolPurpose.purpose=='enroll')\
-                .join(Protocol)\
-                .filter(Protocol.name == protocol)
-          )
+                .outerjoin(Template, File.templates)\
+                .outerjoin(Comparisons, Comparisons.template_A == Template.id)\
+                .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_A)\
+                .outerjoin(Protocol)\
+                .filter(Protocol.name==protocol)\
+                .filter(Protocol_Template_Association.group=="dev") \
+                .group_by(File.id)
+             )
         )
 
       if 'probe' in purposes:
+      
         queries.append(
-          _filter_others(
+            _filter_probes(
             self.query(File)\
-                .join(Template, File.templates)\
-                .join(ProtocolPurpose)\
-                .filter(ProtocolPurpose.sgroup=='dev')\
-                .filter(ProtocolPurpose.purpose=='probe')\
-                .join(Protocol)\
-                .filter(Protocol.name == protocol)
-          )
+                .outerjoin(Template, File.templates)\
+                .outerjoin(Comparisons, Comparisons.template_B == Template.id)\
+                .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_B)\
+                .outerjoin(Protocol)\
+                .filter(Protocol.name==protocol)\
+                .filter(Protocol_Template_Association.group=="dev") \
+                .group_by(File.id)
+             )
         )
 
     # we have collected all queries, now extract the File objects
