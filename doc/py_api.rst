@@ -6,4 +6,4 @@
  JANUS Database
 ================
 
-.. automodule:: bob.db.janus
+.. automodule:: bob.db.ijba

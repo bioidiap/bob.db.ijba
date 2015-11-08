@@ -6,24 +6,62 @@
  User's Guide
 ==============
 
-This package contains the access API and descriptions for the JANUS CS2 database (also known as IARPA Janus Benchmark A -- IJB-A).
-The actual raw data can be downloaded from the original web page: http://www.nist.gov/itl/iad/ig/facechallenges.cfm (note that not everyone might be eligible for downloading the data).
-
-Included in the database, there are list files defining identification experiments.
-The is one protocol, which we call `'NoTrain'`, that consists of a split of the data into a gallery of 500 subjects and a probe group.
-Additionally, 10 different splits are provided, each of which is split into a training set, a gallery of 167 or 168 subjects and an according probe set.
-
-The JANUS database is a quite difficult face recognition database.
-The raw data contain images or video frames in different qualities, and many of the faces are non-frontal.
-For each subject, several :py:class:`bob.db.janus.Template`'s are defined, where in each Template one or more images or video frames are combined.
-For each subject, one of these Templates is used to enroll a model, and the remaining Templates are used for probing.
-Hence, this database implements the FileSet protocol, which is defined in more detail in :ref:`commons`.
 
 
 The Database Interface
 ----------------------
 
-The :py:class:`bob.db.janus.Database` complies with the standard biometric verification database as described in :ref:`commons`, implementing the interface :py:class:`bob.db.verification.utils.SQLiteDatabase`.
+The :py:class:`bob.db.ijba.Database` complies with the standard biometric verification database as described in :ref:`commons`, implementing the interface :py:class:`bob.db.verification.utils.SQLiteDatabase`.
+
+
+The Database Protocols
+----------------------
+
+In total we provide 20 evaluation protocols, the first 10 represents the search protocols and the last 10 are the comparison protocols (one for each split).
+
+
+Search protocols
+================
+
+
+The search protocol measures the accuracy of open-set and closed-set search on the gallery templates using probe templates. 
+To prevent an algorithm from leveraging apriori knowledge that every probe subject contains a mate in the gallery, 55 randomly selected subjects in each split have templates/imagery removed from the gallery set. 
+Every probe template in a given split (regardless of whether or not the gallery contains the probe’s mated templates) are to be searched against the set of gallery templates. **ADD REF**.
+
+The clients of a split as split in two groups called ```world``` and ```dev```.
+With that division the defined protocols are called ```search_splitN``` with ```N=[1-10]```.
+
+To fetch the object files using some protocol (let's say the first split), use the following piece of code:
+
+.. code-block:: python
+
+   >>> import bob.db.ijba
+   >>> db = bob.db.ijba.Database()   
+   >>> #Training set
+   >>> train      = db.objects(protocol='search_split1', groups='world')   
+   >>>
+   >>> # Fetching the gallery of the development set
+   >>> dev_enroll = db.objects(protocol='search_split1', groups='dev', purposes="enroll")
+   >>> # Fetching the probes of the development set
+   >>> dev_probe = db.objects(protocol='search_split1', groups='dev', purposes="probe")
+   >>> 
+
+
+.. warning::  
+  
+  Not all files in the **training set** (world) contains the full annotations (eyes, nose and mouth positions, gender and so on).
+  This API only consider the files with the full annotations.
+  It is important to emphasize this design decision does not impact in the compatibility with the original protocol.
+
+
+
+Comparison protocols
+====================
+
+
+How to build the database
+-------------------------
+
 
 .. todo::
    Explain the particularities of the :py:class:`bob.db.janus.Database` database.
