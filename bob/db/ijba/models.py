@@ -226,13 +226,27 @@ class File(Base, bob.db.verification.utils.File):
     return str(os.path.join(directory, path))
 
 
-# Defines a bi-directional relation between A ProtocolPurpose and a Template
-file_template_association = Table(
-    'file_template_association',
-    Base.metadata,
-    Column('file_id', Integer, ForeignKey('file.id')),
-    Column('template_id', Integer, ForeignKey('template.id'))
-)
+#Defines a bi-directional relation between A ProtocolPurpose and a Template
+#file_template_association = Table(
+#    'file_template_association',
+#    Base.metadata,
+#    Column('file_id', Integer, ForeignKey('file.id')),
+#    Column('template_id', Integer, ForeignKey('template.id'))
+#)
+
+
+class File_Template_Association(Base):
+  """
+  Defines a bi-directional relation between A ProtocolPurpose and a Template
+  """
+  __tablename__ = 'file_template_association'
+
+  protocol_id = Column('file_id', Integer, ForeignKey('file.id'), primary_key=True)
+  template_id = Column('template_id', Integer, ForeignKey('template.id'), primary_key=True)  
+
+  def __init__(self, file_id, template_id):
+    self.file_id     = file_id
+    self.template_id = template_id
 
 
 class Template(Base):
@@ -254,7 +268,7 @@ class Template(Base):
   path = Column(String(100)) # only used to write into score files
 
   client = relationship("Client", backref=backref("templates", order_by=id), uselist=False)
-  files = relationship("File", secondary=file_template_association, backref=backref("templates", order_by=id))
+  files = relationship("File", secondary="file_template_association", backref=backref("templates", order_by=id))
 
   def __init__(self, template_id, subject_id):
     self.template_id = template_id
@@ -292,12 +306,13 @@ class Protocol(Base):
 
 
 
-
 class Protocol_Template_Association(Base):
   """
   Describe the protocols
   """
   __tablename__ = 'protocol_template_association'
+
+  group_choices = GROUPS
 
   protocol_id = Column('protocol_id', Integer, ForeignKey('protocol.id'), primary_key=True)
   template_id = Column('template_id', Integer, ForeignKey('template.id'), primary_key=True)  
@@ -327,7 +342,5 @@ class Comparisons(Base):
     self.protocol    = protocol
     self.template_A  = template_A
     self.template_B  = template_B
-
-
 
 

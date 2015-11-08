@@ -20,6 +20,7 @@
 
 from .query import Database
 from .models import Client, File, Annotation, Template, Protocol, Comparisons, Protocol_Template_Association
+#, File_Template_Association
 
 def get_config():
   """Returns a string containing the configuration information.

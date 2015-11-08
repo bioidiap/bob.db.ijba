@@ -27,6 +27,7 @@ import bob.db.verification.utils
 
 SQLITE_FILE = Interface().files()[0]
 
+
 class Database(bob.db.verification.utils.SQLiteDatabase):
   """The database class opens and maintains a connection opened to the Database.
 
@@ -37,6 +38,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
   def __init__(self, original_directory = None):
     # call base class constructor
     bob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE, File, original_directory=original_directory, original_extension=None)
+
 
   def provides_file_set_for_protocol(self, protocol=None):
     """As this database provides the file set interface (i.e., each probe contains several files) for all protocols, this function returns ``True`` throughout.
@@ -49,7 +51,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     return True
 
 
-  def groups(self, protocol='search_split1'):
+  def groups(self):
     """Returns a list of groups for the given protocol.
 
     Keyword Parameters:
@@ -59,9 +61,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
 
     Returns: a list of groups for the given protocol.
     """
-    protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
-    # for A and B protocol there is only the dev group, for the others it is world and dev
-    return ProtocolPurpose.group_choices[1:] if protocol == 'NoTrain' else ProtocolPurpose.group_choices
+    return Protocol_Template_Association.group_choices
 
 
   def clients(self, groups=None, protocol='search_split1'):
@@ -71,7 +71,7 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
 
     groups
       One or several groups to which the models belong ``('world', 'dev', 'eval')``.
-      If not specified, all groups are returned.
+      If not specified, all groups are returned.Protocol_Template_Association.group_choicesdef cli
 
     protocol
       One of the available protocol names, see :py:meth:`protocol_names`.
@@ -82,13 +82,16 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     groups = self.check_parameters_for_validity(groups, "group", self.groups())
 
     query = self.query(Client)\
-                .join(Template)\
-                .join(ProtocolPurpose)\
-                .join(Protocol)\
-                .filter(Protocol.name == protocol)
+                .outerjoin(File)\
+                .outerjoin(Template, File.templates)\
+                .outerjoin(Protocol_Template_Association)\
+                .outerjoin(Protocol)\
+                .filter(Protocol.name == protocol)\
+                .group_by(File.client_id) \
 
     if groups is not None:
-      query = query.filter(ProtocolPurpose.sgroup.in_(groups))
+      query = query.filter(Protocol_Template_Association.group.in_(groups))
+
 
     return list(query)
 
@@ -126,11 +129,13 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
 
     query = self.query(Template)\
-                .join(ProtocolPurpose)\
-                .filter(ProtocolPurpose.sgroup == 'dev')\
-                .filter(ProtocolPurpose.purpose == 'probe')\
-                .join(Protocol)\
-                .filter(Protocol.name == protocol)
+                .outerjoin(Comparisons                  , Comparisons.template_A                    == Template.id)\
+                .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_A)\
+                .outerjoin(Protocol)\
+                .filter(Protocol_Template_Association.group == 'dev')\
+                .filter(Protocol.name == protocol) \
+                .group_by(Template.id)
+                
 
     return [template.template_id for template in query]
 
@@ -226,8 +231,8 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     """
 
     # check that every parameter is as expected
-    #groups = self.check_parameters_for_validity(groups, "group", ProtocolPurpose.group_choices)
-    #purposes = self.check_parameters_for_validity(purposes, "purpose", ProtocolPurpose.purpose_choices)
+    groups = self.check_parameters_for_validity(groups, "group", ["dev","world"])
+    purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
 
     # assure that the given model ids are in an iteratable container
@@ -274,34 +279,48 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
       )
 
     if 'dev' in groups:
-      if 'enroll' in purposes:        
+    
+      if( (len(purposes)>1) and (model_ids is None)):
+        #Faster query
         queries.append(
-            _filter_models(
-            self.query(File)\
-                .outerjoin(Template, File.templates)\
-                .outerjoin(Comparisons, Comparisons.template_A == Template.id)\
-                .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_A)\
-                .outerjoin(Protocol)\
-                .filter(Protocol.name==protocol)\
-                .filter(Protocol_Template_Association.group=="dev") \
-                .group_by(File.id)
-             )
+          self.query(File)\
+          .outerjoin(Template, File.templates)\
+          .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Template.id)\
+          .outerjoin(Protocol)\
+          .filter(Protocol.name==protocol)\
+          .filter(Protocol_Template_Association.group==("dev")) \
+          .group_by(File.id)
         )
 
-      if 'probe' in purposes:
-      
-        queries.append(
-            _filter_probes(
-            self.query(File)\
-                .outerjoin(Template, File.templates)\
-                .outerjoin(Comparisons, Comparisons.template_B == Template.id)\
-                .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_B)\
-                .outerjoin(Protocol)\
-                .filter(Protocol.name==protocol)\
-                .filter(Protocol_Template_Association.group=="dev") \
-                .group_by(File.id)
-             )
-        )
+    
+      else:
+        if 'enroll' in purposes:        
+          queries.append(
+              _filter_models(
+              self.query(File)\
+                  .outerjoin(Template, File.templates)\
+                  .outerjoin(Comparisons, Comparisons.template_A == Template.id)\
+                  .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_A)\
+                  .outerjoin(Protocol)\
+                  .filter(Protocol.name==protocol)\
+                  .filter(Protocol_Template_Association.group=="dev") \
+                  .group_by(File.id)
+               )
+          )
+
+        if 'probe' in purposes:
+          queries.append(
+              _filter_probes(
+              self.query(File)\
+                  .outerjoin(Template, File.templates)\
+                  .outerjoin(Comparisons, Comparisons.template_B == Template.id)\
+                  .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_B)\
+                  .outerjoin(Protocol)\
+                  .filter(Protocol.name==protocol)\
+                  .filter(Protocol_Template_Association.group=="dev") \
+                  .group_by(File.id)
+               )
+          )
 
     # we have collected all queries, now extract the File objects
     return self.uniquify([file for query in queries for file in query])
@@ -332,27 +351,61 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
       Note that the images of the database will be ignored, when this option is selected.
     """
 
+    #TODO: SET purposes and group as IGNORED
+
     # check that every parameter is as expected
-    groups = self.check_parameters_for_validity(groups, "group", ProtocolPurpose.group_choices[1:])
-    purposes = self.check_parameters_for_validity(purposes, "purpose", ProtocolPurpose.purpose_choices[2:])
+    #groups = self.check_parameters_for_validity(groups, "group", ["dev","world"])
+    #purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])    
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
+    
 
     # assure that the given model ids are in an iteratable container
-    if isinstance(model_ids, int): model_ids = (model_ids,)
-    if isinstance(media_ids, int): media_ids = (media_ids,)
-    if isinstance(frames, int): frames = (frames,)
+    if isinstance(model_ids, int): model_ids = [model_ids]
+    #if isinstance(media_ids, int): media_ids = (media_ids,)
+    #if isinstance(frames, int): frames = (frames,)
 
-    query = self.query(Template)\
-                .join(File, Template.files)\
-                .join(ProtocolPurpose)\
-                .filter(ProtocolPurpose.sgroup == 'dev')\
-                .filter(ProtocolPurpose.purpose == 'probe')\
-                .join(Protocol)\
-                .filter(Protocol.name == protocol)
+
+
+    #query = self.query(Template)\
+    #            .join(File, Template.files)\
+    #            .join(ProtocolPurpose)\
+    #            .filter(ProtocolPurpose.sgroup == 'dev')\
+    #            .filter(ProtocolPurpose.purpose == 'probe')\
+    #            .join(Protocol)\
+    #            .filter(Protocol.name == protocol)
+                
+                
+    if model_ids is None:
+
+      query = self.query(bob.db.ijba.Template)\
+                .outerjoin(bob.db.ijba.Comparisons, bob.db.ijba.Comparisons.template_B == bob.db.ijba.Template.id)\
+                .outerjoin(bob.db.ijba.Protocol_Template_Association, bob.db.ijba.Protocol_Template_Association.template_id == bob.db.ijba.Comparisons.template_B)\
+                .outerjoin(bob.db.ijba.Protocol) \
+                .filter(bob.db.ijba.Protocol.name==protocol)\
+                .filter(bob.db.ijba.Protocol_Template_Association.group=="dev") \
+                .group_by(bob.db.ijba.Template.id)
+    
+    else:
+      model_str = ""
+      for m in model_ids:
+        model_str += "'{0}',".format(str(m))
+      model_str = model_str.rstrip(",")  
+
+      sql = "SELECT comparisons.template_B " \
+        "FROM template " \
+        "LEFT OUTER JOIN comparisons ON comparisons.template_A = template.id " \
+        "LEFT OUTER JOIN protocol_template_association ON protocol_template_association.template_id = comparisons.template_A " \
+        "LEFT OUTER JOIN protocol ON protocol.id = protocol_template_association.protocol_id " \
+        "WHERE protocol.name = \"" + protocol + "\" AND protocol_template_association.\"group\" = \"dev\" AND template.template_id IN ("+ model_str +") "
+
+      template_ids    = [t[0] for t in self.m_session.execute(sql)]
+      query = self.query(bob.db.ijba.Template) \
+                  .filter(bob.db.ijba.Template.id.in_(template_ids))
+  
 
     # filter other criteria
-    if media_ids is not None: query = query.filter(File.media_id.in_(media_ids))
-    if frames is not None: query = query.filter(File.frame.in_(frames))
+    #if media_ids is not None: query = query.filter(File.media_id.in_(media_ids))
+    #if frames is not None: query = query.filter(File.frame.in_(frames))
 
     return list(query)
 
