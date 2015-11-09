@@ -58,13 +58,53 @@ To fetch the object files using some protocol (let's say the first split), use t
 Comparison protocols
 ====================
 
+The compare protocol measures the verification accuracy.
+In a similar manner as previous benchmarks, the protocol specifies precisely which genuine and impostor comparisons should be performed for
+each split. 
+For a given split, the number of genuine comparisons will be equal to the number of probe templates, as a single gallery template exists for each subject. 
+The number of impostor comparisons is set to 10,000. 
+The impostor comparisons are randomly sampled between probe templates and non-mated gallery templates under the following restriction: the two subjects represented in the gallery and probe templates have the same gender, and their skin color differs by no more than one of the six possible levels **ADD REF**.
+
+
+The clients of a split as split in two groups called ```world``` and ```dev```.
+With that division the defined protocols are called ```compare_splitN``` with ```N=[1-10]```.
+
+To fetch the object files using some protocol (let's say the first split), use the following piece of code:
+
+.. code-block:: python
+
+   >>> import bob.db.ijba
+   >>> db = bob.db.ijba.Database()   
+   >>> #Training set
+   >>> train      = db.objects(protocol='compare_split1', groups='world')   
+   >>>
+   >>> # Fetching the gallery for the template '226'
+   >>> dev_enroll = db.objects(protocol='compare_split1', groups='dev', purposes="enroll", model_ids=["226"])
+   >>> # Fetching the probes for the template '226'
+   >>> dev_probe = db.objects(protocol='compare_split1', groups='dev', purposes="probe", model_ids=["226"])
+   >>> 
+
+.. warning::  
+  
+  As mentioned in the beginning of this subsection, each template has their on probes.
+  Hence, it is mandatory to set the keyword ```model_ids``` when fetch files from this protocol.
+
+.. warning::    
+  Not all files in the **training set** (world) contains the full annotations (eyes, nose and mouth positions, gender and so on).
+  This API only consider the files with the full annotations.
+  It is important to emphasize this design decision does not impact in the compatibility with the original protocol.
+
+
 
 How to build the database
 -------------------------
 
+  To build the database, run the following command
 
-.. todo::
-   Explain the particularities of the :py:class:`bob.db.janus.Database` database.
+
+.. code-block:: bash
+
+    ./bin/bob_dbmanage.py ijba create --directory <Original database directory>
 
 
 .. _bob: https://www.idiap.ch/software/bob
