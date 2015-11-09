@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This script creates the CAS-PEAL database in a single pass.
+"""This script creates the IJBA database in a single pass.
 """
 
 from __future__ import print_function
@@ -42,7 +42,7 @@ def read_file(session, directory, filename):
   else:
     T_tag = ''
     
-  with open(os.path.join(directory, 'protocol', filename)) as f:
+  with open(os.path.join(directory, filename)) as f:
     # skip the first line
     _ = f.readline()
     for line in f:
@@ -83,7 +83,8 @@ def add_files(session, directory, verbose):
 
   files      = {}
 
-  filename = os.path.join(directory, 'protocol', 'metadata.csv')
+  #filename = os.path.join(directory, 'protocol', 'metadata.csv')
+  filename = os.path.join('./metadata.csv')
   
   if verbose:
     print("Reading files from", filename)
@@ -235,7 +236,7 @@ def add_protocols_comparison(session, files, directory, verbose=True, logs=True)
       log_files(protocol_name, purpose)
     
     #Now lets add the comparisons
-    filename = os.path.join(directory,"protocol", "split%s" % split, "verify_comparisons_%s.csv" % (split))
+    filename = os.path.join(directory, "split%s" % split, "verify_comparisons_%s.csv" % (split))
     comparisons = open(filename)
     
     for c in comparisons:
@@ -252,6 +253,44 @@ def add_protocols_comparison(session, files, directory, verbose=True, logs=True)
     if(logs):
       if verbose:  print("Printing logs")    
       log_files(protocol_name, purpose)
+
+
+
+
+def generate_metadata(directory):
+  """
+  Read all the metadata files from the splits and save in one single file.
+  The files are the following: search_gallery_[1-10].csv search_probe_[1-10].csv verify_metadata_[1-10].csv
+  """  
+
+  def read_file(filename, read_header=False):
+    lines = open(filename).readlines()
+    
+    if(read_header):
+      return lines
+    else:
+      return lines[1:]
+
+
+  #For each split
+  metadata_list_temp = []
+
+  for i in range(1,11):
+    read_header = False
+    if(i==1):
+      read_header = True
+
+    metadata_list_temp.append(read_file(os.path.join(directory,"split{0}".format(i),"search_gallery_{0}.csv".format(i)), read_header=read_header))
+    metadata_list_temp.append(read_file(os.path.join(directory,"split{0}".format(i),"search_probe_{0}.csv".format(i))))
+    metadata_list_temp.append(read_file(os.path.join(directory,"split{0}".format(i),"verify_metadata_{0}.csv".format(i))))
+    
+  #flatting the list
+  metadata_list = [item for sublist in metadata_list_temp for item in sublist]
+  metadata_file = open("./metadata.csv",'w')
+  for m in metadata_list:
+    print(m)
+    metadata_file.write(m)
+  del metadata_file
 
 
 def create_tables(args):
@@ -287,11 +326,17 @@ def create(args):
   # the real work...
   create_tables(args)
   session = session_try_nolock(args.type, args.files[0], echo=(args.verbose > 2))
+
+  
+  if args.verbose:  print("Generating the metadata files")
+  generate_metadata(args.directory)
+  
+
   files = add_files(session, args.directory, args.verbose)
-  #add_protocols_search(session, files, args.directory, args.verbose, args.logs)
+  add_protocols_search(session, files, args.directory, args.verbose, args.logs)
   add_protocols_comparison(session, files, args.directory, args.verbose, args.logs)
   
-  #add_protocols(session, templates, args.directory, args.verbose, args.logs)  
+  add_protocols(session, templates, args.directory, args.verbose, args.logs)  
   
   session.commit()
   session.close()
@@ -304,6 +349,6 @@ def add_command(subparsers):
   parser.add_argument('-R', '--recreate', action='store_true', help='If set, I\'ll first erase the current database')
   parser.add_argument('-v', '--verbose', action='count', help='Do SQL operations in a verbose way?')
   parser.add_argument('-L', '--logs', action='store_true', help='The files provided by NIST have some inconsistencies. This option will print the log with these inconsistencies.')  
-  parser.add_argument('-D', '--directory', metavar='DIR', default='/home/mgunther/databases/janus', help='The path to the JANUS database')
+  parser.add_argument('-D', '--directory', metavar='DIR', default='/idiap/resource/database/IJB-A/', help='The path to the JANUS database')
 
   parser.set_defaults(func=create) #action
