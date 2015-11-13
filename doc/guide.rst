@@ -17,12 +17,14 @@ The :py:class:`bob.db.ijba.Database` complies with the standard biometric verifi
 How to build the database?
 --------------------------
 
-  To build the database file, run the following command (go for a long coffee after is recommended!!):
+  To build and download the database run the following command (go for a long coffee after is recommended!!):
 
 
 .. code-block:: bash
 
-    ./bin/bob_dbmanage.py ijba create --directory <Original database directory>
+    python bootstrap-buildout.py
+    ./bin/buildout
+    ./bin/bob_dbmanage.py ijba download #The database file is too big, so it is not possible to upload on pypi
 
 
 The Database Protocols
