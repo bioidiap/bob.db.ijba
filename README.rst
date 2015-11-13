@@ -3,6 +3,24 @@
 .. @date:   Tue Sep  8 15:05:38 MDT 2015
 
 
+.. image:: http://img.shields.io/badge/docs-stable-yellow.png
+   :target: http://pythonhosted.org/bob.db.ijba/index.html
+.. image:: http://img.shields.io/badge/docs-latest-orange.png
+   :target: https://www.idiap.ch/software/bob/docs/latest/bioidiap/bob.db.ijba/master/index.html
+.. image:: https://travis-ci.org/bioidiap/bob.db.ijba.svg?branch=master
+   :target: https://travis-ci.org/bioidiap/bob.db.ijba
+.. image:: https://coveralls.io/repos/bioidiap/bob.db.ijba/badge.png
+   :target: https://coveralls.io/r/bioidiap/bob.db.ijba
+.. image:: https://img.shields.io/badge/github-master-0000c0.png
+   :target: https://github.com/bioidiap/bob.db.ijba/tree/master
+.. image:: http://img.shields.io/pypi/v/bob.db.ijba.png
+   :target: https://pypi.python.org/pypi/bob.db.ijba
+.. image:: http://img.shields.io/pypi/dm/bob.db.ijba.png
+   :target: https://pypi.python.org/pypi/bob.db.ijba
+.. image:: https://img.shields.io/badge/original-data--files-a000a0.png
+   :target: http://www.nist.gov/itl/iad/ig/ijba_request.cfm
+
+
 ==================================
  IJB-A Database Interface for Bob
 ==================================
