@@ -14,6 +14,17 @@ The Database Interface
 The :py:class:`bob.db.ijba.Database` complies with the standard biometric verification database as described in :ref:`commons`, implementing the interface :py:class:`bob.db.verification.utils.SQLiteDatabase`.
 
 
+How to build the database?
+--------------------------
+
+  To build the database file, run the following command (go for a long coffee after is recommended!!):
+
+
+.. code-block:: bash
+
+    ./bin/bob_dbmanage.py ijba create --directory <Original database directory>
+
+
 The Database Protocols
 ----------------------
 
@@ -96,15 +107,38 @@ To fetch the object files using some protocol (let's say the first split), use t
 
 
 
-How to build the database
--------------------------
+NIST Score Generation
+=====================
 
-  To build the database, run the following command
-
+NIST has a specific file format to encode the scores of the comparisons.
+This package contains a feature to convert the Bob 4 column format (`bob.measure.load.four_column`) to the NIST format. 
+To do so, run the following command:
 
 .. code-block:: bash
 
-    ./bin/bob_dbmanage.py ijba create --directory <Original database directory>
+    ./bin/score_generation.py <input-score-file> <output-score-file> [--template-size=<n>]
+
+
+NIST specific plots
+-------------------
+
+Both protocols, search and comparison, are divided in 10 splits and the error rates should be measured as the average along the splits.
+Type the following code to have more information on how to generate these plots.
+
+.. code-block:: bash
+
+  ./bin/evaluate_ijba.py --help
+
+
+The image bellow is the averege CMC curve, for the search protocol, with its standard deviation along the 10 splits:
+
+.. image:: ./img/CMC_ijba.png
+
+
+The image bellow is the averege ROC curve, for the comparison protocol, with its standard deviation along the 10 splits:
+
+.. image:: ./img/ROC_ijba.png
+
 
 
 .. _bob: https://www.idiap.ch/software/bob
