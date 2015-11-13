@@ -74,7 +74,7 @@ def test02_search_objects():
   # number of world files for the protocols (cf. the number of lines in the training file lists)
   #world_files = [16911, 16358, 17289, 16567, 17058, 17663, 17589, 16373, 17441, 16783]
   world_files = [15734, 15134, 16042, 15360, 15800, 16323, 16276, 15155, 16149 ,15566]
-  #for i in range(10):
+  #for i in range(10): 
   for i in range(2):
     print("Seach protocol - World set: split {0}".format(i+1))
     assert len(db.objects(groups='world', protocol=SEARCH_PROTOCOLS[i])) == world_files[i]
