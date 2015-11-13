@@ -74,20 +74,22 @@ def test02_search_objects():
   # number of world files for the protocols (cf. the number of lines in the training file lists)
   #world_files = [16911, 16358, 17289, 16567, 17058, 17663, 17589, 16373, 17441, 16783]
   world_files = [15734, 15134, 16042, 15360, 15800, 16323, 16276, 15155, 16149 ,15566]
-  for i in range(10):
-    print("Seach protocol - World set: split {0}",i+1)
+  #for i in range(10):
+  for i in range(2):
+    print("Seach protocol - World set: split {0}".format(i+1))
     assert len(db.objects(groups='world', protocol=SEARCH_PROTOCOLS[i])) == world_files[i]
 
   # enroll files (cf. the number of lines in the gallery file lists)
   enroll_files = [3000, 3257, 2661, 2894, 2916, 2451, 2908, 3102, 2594, 2847]
-  for i in range(10):  
-    print("Seach protocol - Enroll: split {0}",i+1)
+  #for i in range(10):
+  for i in range(2):    
+    print("Seach protocol - Enroll: split {0}".format(i+1))
     assert len(db.objects(groups='dev', purposes='enroll', protocol=SEARCH_PROTOCOLS[i])) == enroll_files[i]
 
   # probe files; not identical with probe file lists as files are used in several probes
   probe_files = [4068, 4671, 4512, 4788, 4535, 4275, 4074, 4871, 4451, 4700]  
-  for i in range(10):  
-    print("Seach protocol - Probes: split {0}",i+1)  
+  for i in range(2):  
+    print("Seach protocol - Probes: split {0}".format(i+1))
     assert len(db.objects(groups='dev', purposes='probe', protocol=SEARCH_PROTOCOLS[i]))
 
   # WARNING! img/9834.JPG is in both gallery and probe of protocol NoTrain
@@ -104,14 +106,14 @@ def test03_comparison_objects():
   world_files = [15734, 15134, 16042, 15360, 15800, 16323, 16276, 15155, 16149 ,15566]
   for i in range(2):
   #for i in range(10):
-    print("Compare protocol - World set: split {0}",i+1)  
+    print("Compare protocol - World set: split {0}".format(i+1))
     assert len(db.objects(groups='world', protocol=COMPARISON_PROTOCOLS[i])) == world_files[i]
   
   # enroll files (cf. the number of lines in the gallery file lists)
   enroll_files = [4260, 4761, 3995, 4458, 4212, 3875, 4133, 4552, 3922, 4332]
   #for i in range(10):
   for i in range(2):
-    print("Enroll protocol - World set: split {0}",i+1)    
+    print("Enroll protocol - World set: split {0}".format(i+1))
     assert len(db.objects(groups='dev', purposes='enroll', protocol=COMPARISON_PROTOCOLS[i])) == enroll_files[i]
 
 
