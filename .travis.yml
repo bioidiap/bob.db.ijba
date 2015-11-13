@@ -20,14 +20,13 @@ install:
 - python bootstrap-buildout.py
 - ./bin/buildout buildout:develop=. buildout:extensions=bob.buildout buildout:auto-checkout=
 script:
-- ./bin/python -c 'import pkg_resources; from bob.db.caspeal import get_config; print(get_config())'
-- ./bin/bob_dbmanage.py caspeal download
-- ./bin/coverage run --source=bob.db.caspeal ./bin/nosetests -sv
-- ./bin/sphinx-build -b doctest doc sphinx
+- ./bin/bob_dbmanage.py ijba download
+- ./bin/coverage run --source=bob.db.ijba ./bin/nosetests -sv
+#- ./bin/sphinx-build -b doctest doc sphinx
 - ./bin/sphinx-build -b html doc sphinx
 after_success:
 - coveralls
 - wget https://raw.githubusercontent.com/bioidiap/bob.extension/master/scripts/upload-{sphinx,wheel}.sh
-- chmod a+x upload-sphinx.sh upload-wheel.sh
-- ./upload-sphinx.sh
-- ./upload-wheel.sh
+#- chmod a+x upload-sphinx.sh upload-wheel.sh
+#- ./upload-sphinx.sh
+#- ./upload-wheel.sh
