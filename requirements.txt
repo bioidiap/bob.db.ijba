@@ -1,3 +1,4 @@
 setuptools
 bob.db.base
 bob.db.verification.utils
+docopt
