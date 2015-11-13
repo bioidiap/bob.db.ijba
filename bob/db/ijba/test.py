@@ -102,53 +102,17 @@ def test03_comparison_objects():
   # number of world files for the protocols (cf. the number of lines in the training file lists)
   #world_files = [16911, 16358, 17289, 16567, 17058, 17663, 17589, 16373, 17441, 16783]
   world_files = [15734, 15134, 16042, 15360, 15800, 16323, 16276, 15155, 16149 ,15566]
-  for i in range(10):
+  for i in range(2):
+  #for i in range(10):
     print("Compare protocol - World set: split {0}",i+1)  
     assert len(db.objects(groups='world', protocol=COMPARISON_PROTOCOLS[i])) == world_files[i]
   
   # enroll files (cf. the number of lines in the gallery file lists)
   enroll_files = [4260, 4761, 3995, 4458, 4212, 3875, 4133, 4552, 3922, 4332]
-  for i in range(10):
+  #for i in range(10):
+  for i in range(2):
     print("Enroll protocol - World set: split {0}",i+1)    
     assert len(db.objects(groups='dev', purposes='enroll', protocol=COMPARISON_PROTOCOLS[i])) == enroll_files[i]
 
 
-"""
-@db_available
-def test_object_sets():
-  # Checks the objects
-  db = bob.db.ijba.Database()
 
-  # test that the object_sets() function returns reasonable numbers of Template objects
-  probe_templates = [5152, 1806, 1798, 1732, 1807, 1766, 1657, 1652, 1883, 1788, 1753]
-  assert all(len(db.object_sets(groups='dev', purposes='probe', protocol=protocol)) == probe_templates[i] for i,protocol in enumerate(ALL_PROTOCOLS))
-
-
-@db_available
-def test_annotations():
-  # Tests that the annotations are available for all files
-  db = bob.db.ijba.Database()
-
-  all_keys = set(['topleft', 'size', 'bottomright', 'forehead-visible', 'eyes-visible', 'nose-mouth-visible', 'indoor', 'gender', 'skin-tone', 'age', 'leye', 'reye', 'nose', 'yaw'])
-
-  # we test only one of the protocols
-  for protocol in random.sample(ALL_PROTOCOLS, 2):
-    files = db.objects(protocol=protocol)
-    # ...and some of the files
-    for file in random.sample(files, 1000):
-      annotations = db.annotations(file)
-      assert 'topleft' in annotations and 'size' in annotations and 'bottomright' in annotations, "Annotations '%s' of file '%s' are incomplete" % (annotations, file.path)
-      assert len(annotations['topleft']) == 2
-      assert len(annotations['bottomright']) == 2
-      assert set(annotations.keys()).issubset(all_keys)
-
-@db_available
-def test_driver_api():
-  # Tests the bob_dbmanage.py driver interface
-  from bob.db.base.script.dbmanage import main
-  assert main('ijba dumplist --self-test'.split()) == 0
-  assert main('ijba dumplist --group=dev --purpose=probe --template-id=133 --protocol=NoTrain --self-test'.split()) == 0
-  assert main('ijba checkfiles --self-test'.split()) == 0
-  assert main('ijba reverse frame/30125_00224 --self-test'.split()) == 0
-  assert main('ijba path 42 --self-test'.split()) == 0
-  """
