@@ -99,7 +99,7 @@ To fetch the object files using some protocol (let's say the first split), use t
 
 .. warning::  
   
-  As mentioned in the beginning of this subsection, each template has their on probes.
+  As mentioned in the beginning of this subsection, each template has their own probes.
   Hence, it is mandatory to set the keyword ```model_ids``` when fetch files from this protocol.
 
 .. warning::    

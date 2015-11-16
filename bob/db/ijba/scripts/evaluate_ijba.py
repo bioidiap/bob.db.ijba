@@ -109,8 +109,8 @@ def _plot_roc(scores_input, colors, labels, title, fontsize=18, position=None):
     frrs_accumulator = numpy.zeros((step,frrs[0][0].shape[0]))
     fars_accumulator = numpy.zeros((step,frrs[0][1].shape[0]))
     for j in range(offset,offset+step):
-      frrs_accumulator[j,:] = frrs[j][0]
-      fars_accumulator[j,:] = frrs[j][1]
+      frrs_accumulator[j-i*step,:] = frrs[j][0]
+      fars_accumulator[j-i*step,:] = frrs[j][1]
 
     frr_average = numpy.mean(frrs_accumulator, axis=0)
     far_average = numpy.mean(fars_accumulator, axis=0); far_std = numpy.std(fars_accumulator, axis=0)    

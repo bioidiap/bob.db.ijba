@@ -20,7 +20,7 @@ It is important to highlight that each template has their set of probes.
 
 The JANUS database is a quite difficult face recognition database.
 The raw data contain images or video frames in different qualities, and many of the faces are non-frontal.
-For each subject, several :py:class:`bob.db.janus.Template`'s are defined, where in each Template one or more images or video frames are combined.
+For each subject, several :py:class:`bob.db.ijba.Template`'s are defined, where in each Template one or more images or video frames are combined.
 For each subject, one of these Templates is used to enroll a model, and the remaining Templates are used for probing.
 Hence, this database implements the FileSet protocol, which is defined in more detail in :ref:`commons`.
 
