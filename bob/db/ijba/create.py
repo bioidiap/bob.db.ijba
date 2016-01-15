@@ -35,39 +35,21 @@ def _update(session, field):
 def read_file(session, directory, filename):
   """Reads the given file and yields the template id, the subject id and path_id (path + sighting_id)"""
     
-  #GAMBIARRA(Search the definition online). 
-  #Since there is the same template id, with different files, in the train and search files, I will add the KEYWORD 'T' in the beggining of the template_id
-  if (filename.find('train')>=0):
-    T_tag = 'T'
-  else:
-    T_tag = ''
-    
   with open(os.path.join(directory, filename)) as f:
     # skip the first line
     _ = f.readline()
     for line in f:
       splits = line.rstrip().split(',')
-      splits = splits[0:24] #Removing the facial hair parameter        
-      #assert len(splits) == 24, splits
-      # we only care about the template id.
+      #splits = splits[0:24] #Removing the facial hair parameter        
+      assert len(splits) == 25
         
-      client_id = int(splits[1])
         
-      #IN THE TRAINING FILE, THE CLIENT ID IS 0. HERE, I WILL TRY TO INFER THE CLIENT IF VIA FILE NAME        
-      path,_ = os.path.splitext(splits[2])
-      if(client_id != 0):         
-        #yield int(splits[0]), int(splits[1]), "%s-%s" % (path, splits[4])
-        yield str(splits[0])+T_tag, int(splits[1]), path
-      else:
-        try:
-          query = session.query(File).filter(File.path == path)
-          assert query.count() == 1
-          client_id = query.first().client_id
-            
-          #yield int(splits[0]), int(client_id), "%s-%s" % (path, splits[4])
-          yield str(splits[0])+T_tag, int(client_id), path
-        except AssertionError:
-          yield '0',0,path
+      template_id = int(splits[0])
+      client_id   = int(splits[1])
+      path,_      = os.path.splitext(splits[2])
+      sighting_id = splits[4]
+      
+      yield template_id, client_id, "%s-%s" % (path, sighting_id)
 
 
 def log_files(protocol_name, purpose):
@@ -80,10 +62,7 @@ def log_files(protocol_name, purpose):
 def add_files(session, directory, verbose):
   """Adds all files of the JANUS database"""
   clients = set()
-
   files      = {}
-
-  #filename = os.path.join(directory, 'protocol', 'metadata.csv')
   filename = os.path.join('./metadata.csv')
   
   if verbose:
@@ -105,13 +84,15 @@ def add_files(session, directory, verbose):
         clients.add(subject_id)
 
       # now, create a File
-      path =  splits[2]
       # unique file id is the path id and the sighting_id
-      #path_id = "%s-%s" % (path, splits[4])
-      path_id,_ = os.path.splitext(path)
+      path_id = "%s-%s" % (os.path.splitext(splits[2])[0], splits[4])
+      path    = splits[2]
+      
       if verbose > 2: print("... Adding file", path)
-      if path_id not in files:
+      if path_id not in files:        
         file = _update(session, File(path, subject_id, int(splits[3]), int(splits[4]), int(splits[5]) if splits[5] else None))
+        #                            path, client_id,  media_id,        sighting_id ,  frame
+
         files[path_id] = file
 
         # create annotations
@@ -130,18 +111,21 @@ def add_templates(session, files, directory, filename, protocol, group, verbose=
   Given a IJBA filename, add all the templates
   """  
   
-  files_not_found = set()
   templates       = {}
   for template_id, subject_id, path_id in read_file(session, directory, filename):
-      
+
     if subject_id==0:
-      files_not_found.add(path_id)#LOGIN THE FILES THAT IS IN THE TRAINING SET, BUT NOT IN THE METADATA.csv
-      if verbose: print("Ignoring the file {0}, because there is no client connected to him/her".format(path_id))
-      continue
+      raise ValueError("Database inconsistency. Subject id is equal to 0.")
+      #if verbose: print("Ignoring the file {0}, because there is no client connected to him/her".format(path_id))      
+      #continue
+
+    #if(template_id=="4161"): #For some reason this fails in the split2, but if I commit does not
+      #session.commit()
         
     # create template with given IDs 
     if template_id not in templates:
       if verbose > 1: print(". Adding template", template_id)
+      
       template = _update(session, Template(template_id, subject_id))
       templates[template_id] = template
 
@@ -152,20 +136,16 @@ def add_templates(session, files, directory, filename, protocol, group, verbose=
       template = templates[template_id]
 
     # add files
-    if(path_id in files):
-      template.add_file(files[path_id])
-    else:
-        files_not_found.add(path_id)
+    template.add_file(files[path_id])
   
-  return templates, files_not_found
+  return templates
 
 
 
 
-def add_protocols_search(session, files, directory, verbose=True, logs=True):
+def add_protocols_search(session, files, directory, verbose=True):
   """Adds the templates and protocols for the JANUS database"""
-
-
+  
   # Now, add the training splits protocols
   for split in [str(i) for i in range(1,11)]:
     # create and add protocol
@@ -184,26 +164,23 @@ def add_protocols_search(session, files, directory, verbose=True, logs=True):
     for purpose in ("gallery", "probe", "train"):
 
       if(purpose=="train"):
-        filename = os.path.join("split%s" % split, "train_%s.csv" % (split))
+        filename = os.path.join("IJB-A_1N_sets","split%s" % split, "train_%s.csv" % (split))
         group = "world"
       else:
-        filename = os.path.join("split%s" % split, "search_%s_%s.csv" % (purpose, split))
+        filename = os.path.join("IJB-A_1N_sets","split%s" % split, "search_%s_%s.csv" % (purpose, split))
         group = "dev"
 
-      templates[purpose],files_not_found = add_templates(session, files, directory,filename, protocol, group, verbose=verbose)
-      
-      if(logs):
-        if verbose:  print("Printing logs")    
-        log_files(protocol_name, purpose)
+      templates[purpose] = add_templates(session, files, directory,filename, protocol, group, verbose=verbose)
     
-    ##Adding the comparisons
+    ##Adding the comparisons. I KNOW THIS IS NOT EFFICIENT IN THE DATABASE SIZE PERSPECTIVE,
+    ##BUT WAS THE WAY THAT I FOUND TO HAVE ONLY ONE DECENT DATABASE MODEL FOR THE SEARCH AND COMPARISON PROTOCOLS.
     for t_gallery in templates['gallery']:
       for t_probe in templates['probe']:
         _update(session, Comparisons(protocol.id, templates['gallery'][t_gallery].id, templates['probe'][t_probe].id))        
 
 
 
-def add_protocols_comparison(session, files, directory, verbose=True, logs=True):
+def add_protocols_comparison(session, files, directory, verbose=True):
   """
   Adds the templates and the COMPARISON protocols for the JANUS database
   
@@ -225,35 +202,25 @@ def add_protocols_comparison(session, files, directory, verbose=True, logs=True)
     templates['train']   = {}
     templates['not_train'] = {}
 
-    filename = os.path.join("split%s" % split, "verify_metadata_%s.csv" % (split))
+    filename = os.path.join("IJB-A_11_sets", "split%s" % split, "verify_metadata_%s.csv" % (split))
     group    = "dev"
 
     #First, lets add the verification files
-    templates['not_train'],files_not_found = add_templates(session, files, directory,filename, protocol, group, verbose=verbose)
-    
-    if(logs):
-      if verbose:  print("Printing logs")    
-      log_files(protocol_name, purpose)
+    templates['not_train'] = add_templates(session, files, directory,filename, protocol, group, verbose=verbose)
     
     #Now lets add the comparisons
-    filename = os.path.join(directory, "split%s" % split, "verify_comparisons_%s.csv" % (split))
+    filename = os.path.join(directory,"IJB-A_11_sets" ,"split%s" % split, "verify_comparisons_%s.csv" % (split))
     comparisons = open(filename)
     
     for c in comparisons:
-      template_A = templates['not_train'][c.split(",")[0]]
-      template_B = templates['not_train'][c.split(",")[1].rstrip("\n\r")]
+      template_A = templates['not_train'][int(c.split(",")[0])]
+      template_B = templates['not_train'][int(c.split(",")[1].rstrip("\n\r"))]
       _update(session, Comparisons(protocol.id, template_A.id, template_B.id))
-
     
     ## Now adding the training set
-    filename = os.path.join("split%s" % split, "train_%s.csv" % (split))
+    filename = os.path.join("IJB-A_11_sets", "split%s" % split, "train_%s.csv" % (split))
     group    = "world"
-    templates['train'],files_not_found = add_templates(session, files, directory,filename, protocol, group, verbose=verbose)
-
-    if(logs):
-      if verbose:  print("Printing logs")    
-      log_files(protocol_name, purpose)
-
+    templates['train'] = add_templates(session, files, directory,filename, protocol, group, verbose=verbose)
 
 
 
@@ -274,21 +241,26 @@ def generate_metadata(directory):
 
   #For each split
   metadata_list_temp = []
-
   for i in range(1,11):
     read_header = False
     if(i==1):
       read_header = True
 
-    metadata_list_temp.append(read_file(os.path.join(directory,"split{0}".format(i),"search_gallery_{0}.csv".format(i)), read_header=read_header))
-    metadata_list_temp.append(read_file(os.path.join(directory,"split{0}".format(i),"search_probe_{0}.csv".format(i))))
-    metadata_list_temp.append(read_file(os.path.join(directory,"split{0}".format(i),"verify_metadata_{0}.csv".format(i))))
+    #Search protocol files (1:N)
+    metadata_list_temp.append(read_file(os.path.join(directory,"IJB-A_1N_sets","split{0}".format(i),"search_gallery_{0}.csv".format(i)), read_header=read_header))
+    metadata_list_temp.append(read_file(os.path.join(directory,"IJB-A_1N_sets","split{0}".format(i),"search_probe_{0}.csv".format(i))))
+               
+    #Comparison protocol files (1:1)
+    metadata_list_temp.append(read_file(os.path.join(directory,"IJB-A_11_sets","split{0}".format(i),"verify_metadata_{0}.csv".format(i))))
+        
+    #Both protocols (The train set is the same)
+    metadata_list_temp.append(read_file(os.path.join(directory,"IJB-A_11_sets","split{0}".format(i),"train_{0}.csv".format(i))))
+    
     
   #flatting the list
   metadata_list = [item for sublist in metadata_list_temp for item in sublist]
   metadata_file = open("./metadata.csv",'w')
   for m in metadata_list:
-    print(m)
     metadata_file.write(m)
   del metadata_file
 
@@ -329,14 +301,11 @@ def create(args):
 
   
   if args.verbose:  print("Generating the metadata files")
-  generate_metadata(args.directory)
-  
+  generate_metadata(args.directory)  
 
-  files = add_files(session, args.directory, args.verbose)
-  add_protocols_search(session, files, args.directory, args.verbose, args.logs)
-  add_protocols_comparison(session, files, args.directory, args.verbose, args.logs)
-  
-  add_protocols(session, templates, args.directory, args.verbose, args.logs)  
+  files = add_files(session, args.directory, args.verbose)  
+  add_protocols_search(session, files, args.directory, args.verbose)
+  add_protocols_comparison(session, files, args.directory, args.verbose)
   
   session.commit()
   session.close()
@@ -348,7 +317,7 @@ def add_command(subparsers):
 
   parser.add_argument('-R', '--recreate', action='store_true', help='If set, I\'ll first erase the current database')
   parser.add_argument('-v', '--verbose', action='count', help='Do SQL operations in a verbose way?')
-  parser.add_argument('-L', '--logs', action='store_true', help='The files provided by NIST have some inconsistencies. This option will print the log with these inconsistencies.')  
+
   parser.add_argument('-D', '--directory', metavar='DIR', default='/idiap/resource/database/IJB-A/', help='The path to the JANUS database')
 
   parser.set_defaults(func=create) #action
