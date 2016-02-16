@@ -87,7 +87,6 @@ def test02_search_objects():
   for i in range(2):    
     assert len(db.objects(groups='dev', purposes='enroll', protocol=SEARCH_PROTOCOLS[i])) == enroll_files[i]
 
-  import ipdb; ipdb.set_trace();
   # probe files; not identical with probe file lists as files are used in several probes
   probe_files = [4068, 4671, 4512, 4788, 4535, 4275, 4074, 4871, 4451, 4700]  
   for i in range(2):  
