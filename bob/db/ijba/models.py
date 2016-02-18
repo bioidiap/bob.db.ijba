@@ -29,9 +29,26 @@ import bob.db.verification.utils
 
 Base = declarative_base()
 
-
 """ Defining protocols. Yes, they are static """
 GROUPS    = ('world', 'dev')
+
+
+def create_memory_database():
+  """
+  Creates a database in memory and clone all the data from the original (with sqlite)
+  """
+
+  memory_db = sqlalchemy.create_engine('sqlite://', echo=False) # in-memory
+  file_db   = sqlalchemy.create_engine('sqlite:///bob/db/ijba/db.sql3') # File db      
+  Base.metadata.create_all(memory_db) #Creating the structure
+  
+  #Cloning the data
+  tables = Base.metadata.tables
+  for table in tables:
+    data = file_db.execute(tables[table].select()).fetchall()
+    if data: memory_db.execute(tables[table].insert(), data)
+  
+  return memory_db
 
 
 class Client(Base):

@@ -20,24 +20,82 @@
 
 import os
 from bob.db.base import utils
-from .models import *
+
+#from .models import *
+
 from .driver import Interface
+from .reader import get_templates, get_comparisons
 
 import bob.db.verification.utils
 
-SQLITE_FILE = Interface().files()[0]
 
-
-class Database(bob.db.verification.utils.SQLiteDatabase):
+class Database(bob.db.verification.utils.Database):
   """The database class opens and maintains a connection opened to the Database.
 
   It provides many different ways to probe for the characteristics of the data
   and for the data itself inside the database.
-  """
+  """   
 
   def __init__(self, original_directory = None):
+  
     # call base class constructor
-    bob.db.verification.utils.SQLiteDatabase.__init__(self, SQLITE_FILE, File, original_directory=original_directory, original_extension=None)
+    bob.db.verification.utils.Database.__init__(self, original_directory=original_directory, original_extension=None)    
+    
+    #Creating our data structure to deal with the db files
+    self.memory_db = {}
+    
+    
+  def _solve_comparisons(self, protocol):
+    """
+    Given a protocol, try to solve the filename verify_comparisons_[n].csv where n is the split number
+    """
+  
+    relative_dir = "IJB-A_11_sets"
+
+    #Getting the split
+    for i in range(1,10):
+      split = "split{0}".format(i)
+      if(split in protocol):
+        relative_dir = os.path.join(self.original_directory,relative_dir,split,"verify_comparisons_{0}.csv".format(i))
+        break
+        
+    return relative_dir
+  
+
+  def _solve_filename(self, protocol, purpose):
+    """
+    Given a protocol and the purpose, try to solve the filename
+    """
+        
+    relative_dir = ""
+    
+    #Getting the recognition task
+    if("search" in protocol):
+      relative_dir = "IJB-A_1N_sets"
+    else:
+      relative_dir = "IJB-A_11_sets"
+      
+    #Getting the split
+    for i in range(1,10):
+      split = "split{0}".format(i)
+      if(split in protocol):
+        relative_dir = os.path.join(relative_dir,split)
+        split_number = i
+        break
+        
+    #Getting the file
+    if purpose=="train":
+      return os.path.join(self.original_directory, relative_dir,"train_{0}.csv".format(split_number))
+
+    if("search" in protocol):
+      if purpose=="enroll":
+        return os.path.join(self.original_directory,relative_dir,"search_gallery_{0}.csv".format(split_number))
+      else:
+        return os.path.join(self.original_directory,relative_dir,"search_probe_{0}.csv".format(split_number))
+      
+    else:
+      #comparison
+      return os.path.join(self.original_directory, relative_dir,"verify_metadata_{0}.csv".format(split_number))
 
 
   def provides_file_set_for_protocol(self, protocol=None):
@@ -235,95 +293,80 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
 
-    # assure that the given model ids are in an iteratable container
-    if isinstance(model_ids, int): model_ids = (model_ids,)
-    if isinstance(media_ids, int): media_ids = (media_ids,)
-    if isinstance(frames, int): frames = (frames,)
-
-    def _filter_others(query):
-      if media_ids is not None: query = query.filter(File.media_id.in_(media_ids))
-      if frames is not None: query = query.filter(File.frame.in_(frames))
-      return query
-
-    def _filter_models(query):
-      return _filter_others(query if model_ids is None else query.filter(Template.template_id.in_(model_ids)))
-
-    def _filter_probes(query):
-      #Getting the original template id in order to get the 
-      templates_ids = []
-      if not model_ids is None:
-        query_templates = self.query(Template)\
-          .outerjoin(Protocol_Template_Association)\
-          .outerjoin(Protocol)\
-          .filter(Protocol.name==protocol) \
-          .filter(Template.template_id.in_(model_ids))
-      
-        templates_ids = [t.id for t in query_templates.all()]
-        
-      #Now selecting the probes for a given template. This is useful for the comparison protocol
-      return _filter_others(query if model_ids is None else query.filter(Comparisons.template_A.in_(templates_ids)))
-
-
     # collect the queries
-    queries = []
+    objects = []
     if 'world' in groups:
-      queries.append(
-        _filter_models(
-          self.query(File)\
-              .outerjoin(Template, File.templates)\
-              .outerjoin(Protocol_Template_Association)\
-              .outerjoin(Protocol)\
-              .filter(Protocol_Template_Association.group=="world") \
-              .filter(Protocol.name==protocol)
-        )
-      )
+    
+      #If the data is not in memory, just create
+      if not protocol in self.memory_db:
+        self.memory_db[protocol] = {}                
+      if not 'world' in self.memory_db[protocol]:
+        self.memory_db[protocol]['world'] = get_templates(self._solve_filename(protocol,"train"))
+
+      objects.extend([o for t in self.memory_db[protocol]['world'] for o in self.memory_db[protocol]['world'][t] ])
+    
+    
 
     if 'dev' in groups:
-    
-      if( (len(purposes)>1) and (model_ids is None)):
-        #Faster query
-        queries.append(
-          self.query(File)\
-          .outerjoin(Template, File.templates)\
-          .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Template.id)\
-          .outerjoin(Protocol)\
-          .filter(Protocol.name==protocol)\
-          .filter(Protocol_Template_Association.group==("dev")) \
-          .group_by(File.id)
-        )
 
-    
-      else:
-        if 'enroll' in purposes:        
-          queries.append(
-              _filter_models(
-              self.query(File)\
-                  .outerjoin(Template, File.templates)\
-                  .outerjoin(Comparisons, Comparisons.template_A == Template.id)\
-                  .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_A)\
-                  .outerjoin(Protocol)\
-                  .filter(Protocol.name==protocol)\
-                  .filter(Protocol_Template_Association.group=="dev") \
-                  .group_by(File.id)
-               )
-          )
+      #Dealing with the search protocol
+      if "search" in protocol:
+        if 'enroll' in purposes:
+        
+          if not protocol in self.memory_db:
+            self.memory_db[protocol] = {}                
+          if not 'enroll' in self.memory_db[protocol]:
+            self.memory_db[protocol]['enroll'] = get_templates(self._solve_filename(protocol,"enroll"))
 
+          if(model_ids is None):
+            objects.extend([o for t in self.memory_db[protocol]['enroll'] for o in self.memory_db[protocol]['enroll'][t]])
+          else:
+            objects.extend([o for t in model_ids for o in self.memory_db[protocol]['enroll'][t]])
+          
+        
         if 'probe' in purposes:
-          queries.append(
-              _filter_probes(
-              self.query(File)\
-                  .outerjoin(Template, File.templates)\
-                  .outerjoin(Comparisons, Comparisons.template_B == Template.id)\
-                  .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_B)\
-                  .outerjoin(Protocol)\
-                  .filter(Protocol.name==protocol)\
-                  .filter(Protocol_Template_Association.group=="dev") \
-                  .group_by(File.id)
-               )
-          )
+          if not protocol in self.memory_db:
+            self.memory_db[protocol] = {}                
+          if not 'probe' in self.memory_db[protocol]:
+            self.memory_db[protocol]['probe'] = get_templates(self._solve_filename(protocol,"probe"))
+                    
+          if(model_ids is None):
+            objects.extend([o for t in self.memory_db[protocol]['probe'] for o in self.memory_db[protocol]['probe'][t]])
+          else:
+            objects.extend([o for t in model_ids for o in self.memory_db[protocol]['probe'][t]])
+            
+
+      #Dealing with comparisons
+      else:
+              
+        if not protocol in self.memory_db:
+          self.memory_db[protocol] = {}                
+        if not 'comparison-templates' in self.memory_db[protocol]:
+          self.memory_db[protocol]['comparison-templates'] = get_templates(self._solve_filename(protocol,""))
+          self.memory_db[protocol]['comparisons']          = get_comparisons(self._solve_comparisons(protocol))
+
+        #import ipdb; ipdb.set_trace();
+        if 'enroll' in purposes:
+ 
+          if model_ids is None:
+            for c in self.memory_db[protocol]['comparisons']:
+              objects.extend(self.memory_db[protocol]['comparison-templates'][c])
+          else:
+            for m in model_ids:
+              objects.extend(self.memory_db[protocol]['comparison-templates'][m])
+          
+          
+        if 'probe' in purposes:
+          if(model_ids is None):
+            raise ValueError("`model_ids` parameter required for the protocol `{0}`. For the comparison protocols, each model has an specific set of probes.".format(protocol))
+          else:
+            for c in model_ids:
+              for probe in self.memory_db[protocol]['comparisons']:
+                objects.extend(self.memory_db[protocol]['comparison-templates'][probe])
+
 
     # we have collected all queries, now extract the File objects
-    return self.uniquify([file for query in queries for file in query])
+    return objects
 
 
   def object_sets(self, groups='dev', protocol='search_split1', purposes='probe', model_ids=None, media_ids=None, frames=None):
@@ -415,22 +458,27 @@ class Database(bob.db.verification.utils.SQLiteDatabase):
     """Returns the annotations for the given :py:class:`File` object as a dictionary, see :py:class:`Annotation` for details."""
     self.assert_validity()
     # return annotations as obtained from the __call__ command of the Annotation class
-    return file.annotation()
+    return file.annotations()
 
 
   def protocol_names(self):
     """Returns all registered protocol names, which are usually ``['NoTrain'] + ['split%d' for d in range(1,11)]``"""
-    return [str(p.name) for p in self.protocols()]
+    return self.protocols()
 
 
   def protocols(self):
-    """Returns all registered :py:class:`Protocol` objects."""
-    return list(self.query(Protocol))
+    """Returns all possible protocols."""
+
+    protocol_choices = ['search_split%d' % d for d in range(1,11)]
+    protocol_choices += ['compare_split%d' % d for d in range(1,11)]  
+
+    return protocol_choices
+
 
 
   def has_protocol(self, name):
     """Tells if a certain protocol is available"""
-    return self.query(Protocol).filter(Protocol.name==name).count() != 0
+    return name in self.protocols()
 
 
   def original_file_name(self, file, check_existence = True):

@@ -24,13 +24,6 @@ import os
 
 from .models import *
 
-def _update(session, field):
-  """Add, updates and returns the given field for in the current session"""
-  session.add(field)
-  session.flush()
-  session.refresh(field)
-  return field
-
 
 def read_file(session, directory, filename):
   """Reads the given file and yields the template id, the subject id and path_id (path + sighting_id)"""

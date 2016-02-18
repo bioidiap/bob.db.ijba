@@ -19,7 +19,9 @@
 """
 
 from .query import Database
-from .models import Client, File, Annotation, Template, Protocol, Comparisons, Protocol_Template_Association
+from .reader import get_templates
+
+#from .models import Client, File, Annotation, Template, Protocol, Comparisons, Protocol_Template_Association
 #, File_Template_Association
 
 def get_config():
