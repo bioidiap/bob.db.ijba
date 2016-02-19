@@ -98,6 +98,30 @@ class Database(bob.db.verification.utils.Database):
       return os.path.join(self.original_directory, relative_dir,"verify_metadata_{0}.csv".format(split_number))
 
 
+  def _load_data(self, protocol, group, purpose):
+    """
+    Check and load the data from a specific protocol in the variable self.memory_db
+    """
+
+    if not protocol in self.memory_db:
+      self.memory_db[protocol] = {}                
+
+    #Training set is the same for both major protocols (search and comparison)
+    if purpose=="train":
+      self.memory_db[protocol][purpose] = get_templates(self._solve_filename(protocol,purpose))
+      return
+
+    #Special treatment for the comparison
+    if "search" in protocol:
+      if not purpose in self.memory_db[protocol]:
+        self.memory_db[protocol][purpose] = get_templates(self._solve_filename(protocol,purpose))
+    else:
+      if not 'comparison-templates' in self.memory_db[protocol]:
+        self.memory_db[protocol]['comparison-templates'] = get_templates(self._solve_filename(protocol,""))
+        self.memory_db[protocol]['comparisons']          = get_comparisons(self._solve_comparisons(protocol))
+
+
+
   def provides_file_set_for_protocol(self, protocol=None):
     """As this database provides the file set interface (i.e., each probe contains several files) for all protocols, this function returns ``True`` throughout.
 
@@ -119,39 +143,25 @@ class Database(bob.db.verification.utils.Database):
 
     Returns: a list of groups for the given protocol.
     """
-    return Protocol_Template_Association.group_choices
+    return ('world', 'dev')
 
 
   def clients(self, groups=None, protocol='search_split1'):
-    """Returns a list of :py:class:`Client` objects for the specific query by the user.
+    """Same as client_id
 
     Keyword Parameters:
 
     groups
-      One or several groups to which the models belong ``('world', 'dev', 'eval')``.
-      If not specified, all groups are returned.Protocol_Template_Association.group_choicesdef cli
+      One or several groups to which the models belong ('world', 'dev', 'eval').
+      If not specified, all groups are returned.
 
     protocol
       One of the available protocol names, see :py:meth:`protocol_names`.
 
-    Returns: A list containing all the :py:class:`Client` objects which have the desired properties.
+    Returns: A list containing all the client ids which have the desired properties.
     """
-    protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
-    groups = self.check_parameters_for_validity(groups, "group", self.groups())
 
-    query = self.query(Client)\
-                .outerjoin(File)\
-                .outerjoin(Template, File.templates)\
-                .outerjoin(Protocol_Template_Association)\
-                .outerjoin(Protocol)\
-                .filter(Protocol.name == protocol)\
-                .group_by(File.client_id) \
-
-    if groups is not None:
-      query = query.filter(Protocol_Template_Association.group.in_(groups))
-
-
-    return list(query)
+    return self.client_ids(groups = groups, protocol = protocol)
 
 
   def client_ids(self, groups=None, protocol='search_split1'):
@@ -168,7 +178,25 @@ class Database(bob.db.verification.utils.Database):
 
     Returns: A list containing all the client ids which have the desired properties.
     """
-    return [client.id for client in self.clients(groups, protocol)]
+
+    protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
+    groups = self.check_parameters_for_validity(groups, "group", self.groups())
+
+    if "search" in protocol:
+      objects = self.objects(groups=groups, protocol=protocol)
+    else:
+    
+      objects = []
+      for g in groups:    
+          if g == "world":
+            objects.extend(self.objects(groups=g, protocol=protocol))
+          else:
+            self._load_data(protocol, "dev", "")
+            objects.extend([o for t in self.memory_db[protocol]['comparison-templates'] for o in self.memory_db[protocol]['comparison-templates'][t] ])
+    
+    ids = list(set([o.client_id for o in objects ]))
+
+    return ids
 
 
   def model_ids(self, groups=None, protocol='search_split1'):
@@ -184,80 +212,35 @@ class Database(bob.db.verification.utils.Database):
 
     Returns: A list containing all the model ids for the given protocol.
     """
+
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
+    groups = self.check_parameters_for_validity(groups, "group", self.groups())
 
-    query = self.query(Template)\
-                .outerjoin(Comparisons                  , Comparisons.template_A                    == Template.id)\
-                .outerjoin(Protocol_Template_Association, Protocol_Template_Association.template_id == Comparisons.template_A)\
-                .outerjoin(Protocol)\
-                .filter(Protocol_Template_Association.group == 'dev')\
-                .filter(Protocol.name == protocol) \
-                .group_by(Template.id)
-                
+    #Just filling up the memory_db
+    
+    
+    if "search" in protocol:
+      self._load_data(protocol, "dev", "enroll")
+      self._load_data(protocol, "dev", "probe")      
 
-    return [template.template_id for template in query]
+      ids = [t for t in self.memory_db[protocol]['enroll']]
+      ids.extend([t for t in self.memory_db[protocol]['probe']])
+    else:
+      self._load_data(protocol, "dev", "")
+      ids = [t for t in self.memory_db[protocol]['comparison-templates']]
+
+    return ids
 
 
-  def template_ids(self):
+
+  def template_ids(self, protocol='search_split1'):
     """Returns a list of valid template ids, where :py:class:`Template`'s can be used both for model enrollment or probing.
 
     This function returns a list of actual template_ids.
     The according templates might differ between the protocols.
-    """
-    query = self.query(Template)
-    return self.uniquify([template.template_id for template in query])
+    """    
+    return self.model_ids(protocol)
 
-
-  def get_client_id_from_file_id(self, file_id, **kwargs):
-    """Returns the client_id attached to the given file_id
-
-    Keyword Parameters:
-
-    file_id
-      The file_id to consider, which is expected to be the unique :py:attr:`File.id`.
-
-    Returns: The client_id attached to the given file_id
-    """
-    query = self.query(File)\
-                .filter(File.id == file_id)
-
-    assert query.count() == 1
-    return query.first().client_id
-
-
-  def get_client_id_from_path(self, path):
-    """Returns the client_id attached to the given path
-
-    Keyword Parameters:
-
-    path
-      The path to consider :py:attr:`File.path`.
-
-    Returns: The client_id attached to the given file_id
-    """
-    query = self.query(File)\
-                .filter(File.path == path)
-
-    assert query.count() == 1
-    return query.first().client_id
-
-
-  def get_client_id_from_model_id(self, model_id):
-    """Returns the client_id attached to the given model_id
-
-    Keyword Parameters:
-
-    model_id
-      The model id to consider
-
-    Returns: The client_id attached to the given model_id
-    """
-    query = self.query(Template)\
-                .filter(Template.template_id == model_id)
-
-    
-    assert all(t.client_id == query.first().client_id for t in query)
-    return query.first().client_id
 
 
   def objects(self, groups=None, protocol='search_split1', purposes=None, model_ids=None, media_ids=None, frames=None):
@@ -296,27 +279,16 @@ class Database(bob.db.verification.utils.Database):
     # collect the queries
     objects = []
     if 'world' in groups:
-    
-      #If the data is not in memory, just create
-      if not protocol in self.memory_db:
-        self.memory_db[protocol] = {}                
-      if not 'world' in self.memory_db[protocol]:
-        self.memory_db[protocol]['world'] = get_templates(self._solve_filename(protocol,"train"))
-
-      objects.extend([o for t in self.memory_db[protocol]['world'] for o in self.memory_db[protocol]['world'][t] ])
-    
-    
+      self._load_data(protocol, "world", "train")
+      objects.extend([o for t in self.memory_db[protocol]['train'] for o in self.memory_db[protocol]['train'][t] ])
+        
 
     if 'dev' in groups:
 
       #Dealing with the search protocol
       if "search" in protocol:
         if 'enroll' in purposes:
-        
-          if not protocol in self.memory_db:
-            self.memory_db[protocol] = {}                
-          if not 'enroll' in self.memory_db[protocol]:
-            self.memory_db[protocol]['enroll'] = get_templates(self._solve_filename(protocol,"enroll"))
+          self._load_data(protocol, "dev", "enroll")
 
           if(model_ids is None):
             objects.extend([o for t in self.memory_db[protocol]['enroll'] for o in self.memory_db[protocol]['enroll'][t]])
@@ -325,27 +297,17 @@ class Database(bob.db.verification.utils.Database):
           
         
         if 'probe' in purposes:
-          if not protocol in self.memory_db:
-            self.memory_db[protocol] = {}                
-          if not 'probe' in self.memory_db[protocol]:
-            self.memory_db[protocol]['probe'] = get_templates(self._solve_filename(protocol,"probe"))
+          self._load_data(protocol, "dev", "probe")
                     
-          if(model_ids is None):
-            objects.extend([o for t in self.memory_db[protocol]['probe'] for o in self.memory_db[protocol]['probe'][t]])
-          else:
-            objects.extend([o for t in model_ids for o in self.memory_db[protocol]['probe'][t]])
-            
+          #The probes for the search are the same for all users          
+          objects.extend([o for t in self.memory_db[protocol]['probe'] for o in self.memory_db[protocol]['probe'][t]])
+
 
       #Dealing with comparisons
       else:
               
-        if not protocol in self.memory_db:
-          self.memory_db[protocol] = {}                
-        if not 'comparison-templates' in self.memory_db[protocol]:
-          self.memory_db[protocol]['comparison-templates'] = get_templates(self._solve_filename(protocol,""))
-          self.memory_db[protocol]['comparisons']          = get_comparisons(self._solve_comparisons(protocol))
-
-        #import ipdb; ipdb.set_trace();
+        self._load_data(protocol, "dev", "")
+        
         if 'enroll' in purposes:
  
           if model_ids is None:
@@ -361,7 +323,7 @@ class Database(bob.db.verification.utils.Database):
             raise ValueError("`model_ids` parameter required for the protocol `{0}`. For the comparison protocols, each model has an specific set of probes.".format(protocol))
           else:
             for c in model_ids:
-              for probe in self.memory_db[protocol]['comparisons']:
+              for probe in self.memory_db[protocol]['comparisons'][c]:
                 objects.extend(self.memory_db[protocol]['comparison-templates'][probe])
 
 
@@ -402,55 +364,7 @@ class Database(bob.db.verification.utils.Database):
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
     
 
-    # assure that the given model ids are in an iteratable container
-    if isinstance(model_ids, int): model_ids = [model_ids]
-    #if isinstance(media_ids, int): media_ids = (media_ids,)
-    #if isinstance(frames, int): frames = (frames,)
-
-
-
-    #query = self.query(Template)\
-    #            .join(File, Template.files)\
-    #            .join(ProtocolPurpose)\
-    #            .filter(ProtocolPurpose.sgroup == 'dev')\
-    #            .filter(ProtocolPurpose.purpose == 'probe')\
-    #            .join(Protocol)\
-    #            .filter(Protocol.name == protocol)
-                
-                
-    if model_ids is None:
-
-      query = self.query(bob.db.ijba.Template)\
-                .outerjoin(bob.db.ijba.Comparisons, bob.db.ijba.Comparisons.template_B == bob.db.ijba.Template.id)\
-                .outerjoin(bob.db.ijba.Protocol_Template_Association, bob.db.ijba.Protocol_Template_Association.template_id == bob.db.ijba.Comparisons.template_B)\
-                .outerjoin(bob.db.ijba.Protocol) \
-                .filter(bob.db.ijba.Protocol.name==protocol)\
-                .filter(bob.db.ijba.Protocol_Template_Association.group=="dev") \
-                .group_by(bob.db.ijba.Template.id)
-    
-    else:
-      model_str = ""
-      for m in model_ids:
-        model_str += "'{0}',".format(str(m))
-      model_str = model_str.rstrip(",")  
-
-      sql = "SELECT comparisons.template_B " \
-        "FROM template " \
-        "LEFT OUTER JOIN comparisons ON comparisons.template_A = template.id " \
-        "LEFT OUTER JOIN protocol_template_association ON protocol_template_association.template_id = comparisons.template_A " \
-        "LEFT OUTER JOIN protocol ON protocol.id = protocol_template_association.protocol_id " \
-        "WHERE protocol.name = \"" + protocol + "\" AND protocol_template_association.\"group\" = \"dev\" AND template.template_id IN ("+ model_str +") "
-
-      template_ids    = [t[0] for t in self.m_session.execute(sql)]
-      query = self.query(bob.db.ijba.Template) \
-                  .filter(bob.db.ijba.Template.id.in_(template_ids))
-  
-
-    # filter other criteria
-    #if media_ids is not None: query = query.filter(File.media_id.in_(media_ids))
-    #if frames is not None: query = query.filter(File.frame.in_(frames))
-
-    return list(query)
+    return model_ids(self, protocol='search_split1')
 
 
 
