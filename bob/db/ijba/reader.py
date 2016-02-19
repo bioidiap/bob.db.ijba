@@ -43,15 +43,16 @@ def read_file(filename):
       template_id = int(splits[0])
       client_id   = int(splits[1])
 
-      path,_      = os.path.splitext(splits[2])
+      path,extension     = os.path.splitext(splits[2])
       sighting_id = splits[4]
       file_id     = "%s-%s" % (path, sighting_id)
 
       #Creating the file object and binding the annotations directly to the object
-      file_obj = File(client_id, path, file_id)      
+      file_obj = File(client_id, path, file_id)
       annotations = read_annotations(splits[6:])
       
       file_obj.annotations = annotations
+      file_obj.extension   = extension
       
       yield template_id, file_obj
 
@@ -114,26 +115,43 @@ def read_annotations(raw_annotations):
 
   annotations = {}
 
-  annotations['tl_x']   = raw_annotations[0]
-  annotations['tl_y']   = raw_annotations[1]
-  annotations['size_x'] = raw_annotations[2]
-  annotations['size_y'] = raw_annotations[3]
-  annotations['re_x']   = raw_annotations[4]
-  annotations['re_y']   = raw_annotations[5]
-  annotations['le_x']   = raw_annotations[6]
-  annotations['le_y']   = raw_annotations[7]
-  annotations['n_x']    = raw_annotations[8]
-  annotations['n_y']    = raw_annotations[9]
-  annotations['yaw']    = raw_annotations[10]
-    
-  annotations['forehead'] = raw_annotations[17-6]
-  annotations['eyes']     = raw_annotations[18-6]
-  annotations['nm']       = raw_annotations[19-6]
-  annotations['indoor']   = raw_annotations[20-6]
-  annotations['gender']   = raw_annotations[21-6]
-  annotations['skin']     = raw_annotations[22-5]
-  annotations['age']      = raw_annotations[23-6]
 
+  tl_x   = float(raw_annotations[0]) if raw_annotations[0]!='' else None
+  tl_y   = float(raw_annotations[1]) if raw_annotations[1]!='' else None
+  size_x = float(raw_annotations[2]) if raw_annotations[2]!='' else None
+  size_y = float(raw_annotations[3]) if raw_annotations[3]!='' else None
+  re_x   = float(raw_annotations[4]) if raw_annotations[4]!='' else None
+  re_y   = float(raw_annotations[5]) if raw_annotations[5]!='' else None
+  le_x   = float(raw_annotations[6]) if raw_annotations[6]!='' else None
+  le_y   = float(raw_annotations[7]) if raw_annotations[7]!='' else None
+  n_x    = float(raw_annotations[8]) if raw_annotations[8]!='' else None
+  n_y    = float(raw_annotations[9]) if raw_annotations[9]!='' else None
+  yaw    = float(raw_annotations[10]) if raw_annotations[10]!='' else None
+    
+  forehead = raw_annotations[17-6]
+  eyes     = raw_annotations[18-6]
+  nm       = raw_annotations[19-6]
+  indoor   = raw_annotations[20-6]
+  gender   = raw_annotations[21-6]
+  skin     = raw_annotations[22-5]
+  age      = raw_annotations[23-6]
+
+
+  annotations['topleft']            = (tl_y, tl_x)
+  annotations['size']               = (size_y, size_x)
+  annotations['bottomright']        = (tl_y + size_y, tl_x + size_x)
+  annotations['forehead-visible']   = forehead
+  annotations['eyes-visible']       = eyes
+  annotations['nose-mouth-visible'] = nm
+  annotations['indoor']             = indoor
+  annotations['gender']             = gender
+  annotations['skin-tone']          = skin
+  annotations['age']                = age
+
+  if all(a is not None for a in (re_y, re_x)): annotations['reye'] = (re_y, re_x)
+  if all(a is not None for a in (le_y, le_x)): annotations['leye'] = (le_y, le_x)
+  if all(a is not None for a in (n_y, n_x)): annotations['nose'] = (n_y, n_x)
+  if yaw is not None: annotations['yaw'] = yaw
 
   return annotations
 

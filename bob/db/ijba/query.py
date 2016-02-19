@@ -281,7 +281,6 @@ class Database(bob.db.verification.utils.Database):
     if 'world' in groups:
       self._load_data(protocol, "world", "train")
       objects.extend([o for t in self.memory_db[protocol]['train'] for o in self.memory_db[protocol]['train'][t] ])
-        
 
     if 'dev' in groups:
 
@@ -370,9 +369,8 @@ class Database(bob.db.verification.utils.Database):
 
   def annotations(self, file):
     """Returns the annotations for the given :py:class:`File` object as a dictionary, see :py:class:`Annotation` for details."""
-    self.assert_validity()
     # return annotations as obtained from the __call__ command of the Annotation class
-    return file.annotations()
+    return file.annotations
 
 
   def protocol_names(self):
@@ -410,7 +408,7 @@ class Database(bob.db.verification.utils.Database):
     if not self.original_directory:
       raise ValueError("The original_directory was not specified in the constructor.")
     # extract file name
-    file_name = file.make_path(self.original_directory, file.extension, add_sighting_id=False)
+    file_name = file.make_path(self.original_directory, file.extension)
     if not check_existence or os.path.exists(file_name):
       return file_name
     raise ValueError("The file '%s' was not found. Please check the original directory '%s'?" % (file_name, self.original_directory))
