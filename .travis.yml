@@ -20,7 +20,6 @@ install:
 - python bootstrap-buildout.py
 - ./bin/buildout buildout:develop=. buildout:extensions=bob.buildout buildout:auto-checkout=
 script:
-- ./bin/bob_dbmanage.py ijba download
 - ./bin/coverage run --source=bob.db.ijba ./bin/nosetests -sv
 #- ./bin/sphinx-build -b doctest doc sphinx
 - ./bin/sphinx-build -b html doc sphinx
