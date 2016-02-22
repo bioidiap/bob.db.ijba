@@ -7,7 +7,7 @@
    :target: http://pythonhosted.org/bob.db.ijba/index.html
 .. image:: http://img.shields.io/badge/docs-latest-orange.png
    :target: https://www.idiap.ch/software/bob/docs/latest/bioidiap/bob.db.ijba/master/index.html
-.. image:: https://travis-ci.org/bioidiap/bob.db.ijba.svg?branch=v1.0.0
+.. image:: https://travis-ci.org/bioidiap/bob.db.ijba.svg?branch=master
    :target: https://travis-ci.org/bioidiap/bob.db.ijba
 .. image:: https://coveralls.io/repos/bioidiap/bob.db.ijba/badge.png
    :target: https://coveralls.io/r/bioidiap/bob.db.ijba
