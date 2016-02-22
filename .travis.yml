@@ -1,7 +1,6 @@
 language: python
 matrix:
   include:
-  - python: 2.6
   - python: 2.7
     env:
     - secure: VD6bVhngzXrNa6cXb802ciinSGk/tMVSWyvAE3bDA5HVDYeDp33TeaCZEGtUuecUUa4+cCfZpDLMEddm/LC4tVbCx+G3I5333ldq499NYvA6USuwBMz+ZnXVL9heY98DP7m42cX6NMF47Sb/u/CtXn0X3iTSNdMYh0f1RkV9ZlA=
@@ -10,6 +9,8 @@ matrix:
     - BOB_UPLOAD_WHEEL="--universal"
   - python: 3.3
   - python: 3.4
+  - python: 3.5
+
 before_install:
 - sudo add-apt-repository -y ppa:biometrics/bob
 - sudo apt-get update -qq
@@ -18,6 +19,7 @@ before_install:
 - pip install --find-links https://www.idiap.ch/software/bob/wheels/travis/ --use-wheel --pre -r requirements.txt coveralls
 install:
 - python bootstrap-buildout.py
+- ./bin/buildout buildout:develop=. buildout:extensions=bob.buildout buildout:auto-checkout=
 - ./bin/buildout buildout:develop=. buildout:extensions=bob.buildout buildout:auto-checkout=
 script:
 - ./bin/coverage run --source=bob.db.ijba ./bin/nosetests -sv
