@@ -36,13 +36,14 @@ class Database(bob.db.verification.utils.Database):
   and for the data itself inside the database.
   """   
 
-  def __init__(self, original_directory = None):
+  def __init__(self, original_directory = None, annotations_directory="./bob/db/ijba/data"):
   
     # call base class constructor
-    bob.db.verification.utils.Database.__init__(self, original_directory=original_directory, original_extension=None)    
+    bob.db.verification.utils.Database.__init__(self, original_directory=original_directory, original_extension=None)
     
     #Creating our data structure to deal with the db files
     self.memory_db = {}
+    self.annotations_directory = annotations_directory
     
     
   def _solve_comparisons(self, protocol):
@@ -56,7 +57,7 @@ class Database(bob.db.verification.utils.Database):
     for i in range(1,10):
       split = "split{0}".format(i)
       if(split in protocol):
-        relative_dir = os.path.join(self.original_directory,relative_dir,split,"verify_comparisons_{0}.csv".format(i))
+        relative_dir = os.path.join(self.annotations_directory,relative_dir,split,"verify_comparisons_{0}.csv".format(i))
         break
         
     return relative_dir
@@ -85,17 +86,17 @@ class Database(bob.db.verification.utils.Database):
         
     #Getting the file
     if purpose=="train":
-      return os.path.join(self.original_directory, relative_dir,"train_{0}.csv".format(split_number))
+      return os.path.join(self.annotations_directory, relative_dir,"train_{0}.csv".format(split_number))
 
     if("search" in protocol):
       if purpose=="enroll":
-        return os.path.join(self.original_directory,relative_dir,"search_gallery_{0}.csv".format(split_number))
+        return os.path.join(self.annotations_directory,relative_dir,"search_gallery_{0}.csv".format(split_number))
       else:
-        return os.path.join(self.original_directory,relative_dir,"search_probe_{0}.csv".format(split_number))
+        return os.path.join(self.annotations_directory,relative_dir,"search_probe_{0}.csv".format(split_number))
       
     else:
       #comparison
-      return os.path.join(self.original_directory, relative_dir,"verify_metadata_{0}.csv".format(split_number))
+      return os.path.join(self.annotations_directory, relative_dir,"verify_metadata_{0}.csv".format(split_number))
 
 
   def _load_data(self, protocol, group, purpose):

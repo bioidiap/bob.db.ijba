@@ -31,7 +31,7 @@ PROTOCOLS            = SEARCH_PROTOCOLS + COMPARISON_PROTOCOLS
 
 def test01_search_clients():
   # Checks the clients
-  db = bob.db.ijba.Database("./bob/db/ijba/data/")    
+  db = bob.db.ijba.Database()
 
   # The number of groups and protocols  
   assert set(db.protocol_names()) == set(PROTOCOLS)

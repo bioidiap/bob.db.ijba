@@ -1,6 +1,0 @@
-# CKSUM[cksum] SIZE[bytes] DIRS[count] FILES[count] DATE[iso]
-1950739019 4456962 0 3 20160118T094543 # DIRCKSUM
-# CKSUK[cksum] SIZE[bytes] FILE[name]
-3354375326 399257 search_gallery_1.csv
-327625489 1822688 search_probe_1.csv
-2098515610 2235017 train_1.csv
