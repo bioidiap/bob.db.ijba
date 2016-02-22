@@ -26,6 +26,24 @@ import os
 from bob.db.verification.utils import File
 
 
+class Template():
+  """A ``Template`` contains a list of :py:class:`File` objects belonging to the same subject (there might be several templates per subject).
+  These are listed in the ``self.files`` field.
+  A ``Template`` can serve for training, model enrollment, or for probing.
+  Each template belongs specifically to a certain protocol, as the template_id in the original file lists might differ for different protocols.
+  The according :py:class:`ProtocolPurpose` can be obtained using the ``self.protocol_purpose`` after creation of the database.
+  Note that the ``template_id`` corresponds to the template_id of the file lists, while the ``id`` is only used as a un
+ique key for querying the database.
+  For convenience, the template also contains a ``path``, which is a concatenation of the first :py:attr:`File.media_id
+` of the first file, and the ``self.template_id``, making it unique (at least per protocol).
+  """
+  def __init__(self, template_id, subject_id, files):
+    self.id = template_id
+    self.client_id   = subject_id
+    assert isinstance(files,list)
+    self.files       = files
+    self.path = "%s-%s" % (files[0].media_id, template_id)
+
 
 def read_file(filename):
   """Reads the given file and yields the template id, the subject id and path_id (path + sighting_id)"""
@@ -53,8 +71,9 @@ def read_file(filename):
       
       file_obj.annotations = annotations
       file_obj.extension   = extension
-      
-      yield template_id, file_obj
+      file_obj.media_id    = splits[3]        
+
+      yield template_id, client_id, file_obj
 
 
 def get_comparisons(filename):
@@ -96,13 +115,13 @@ def get_templates(filename,  verbose=True):
   """  
 
   templates       = {}
-  for template_id, file_obj in read_file(filename):
+  for template_id, client_id, file_obj in read_file(filename):
 
     # create template with given IDs 
     if template_id not in templates:
-      templates[template_id] = [file_obj]
+      templates[template_id] = Template(template_id,client_id,[file_obj])
     else:
-      templates[template_id].append(file_obj)
+      templates[template_id].files.append(file_obj)
     
   return templates
 

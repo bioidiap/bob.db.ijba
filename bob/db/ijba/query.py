@@ -192,14 +192,14 @@ class Database(bob.db.verification.utils.Database):
             objects.extend(self.objects(groups=g, protocol=protocol))
           else:
             self._load_data(protocol, "dev", "")
-            objects.extend([o for t in self.memory_db[protocol]['comparison-templates'] for o in self.memory_db[protocol]['comparison-templates'][t] ])
+            objects.extend([o for t in self.memory_db[protocol]['comparison-templates'] for o in self.memory_db[protocol]['comparison-templates'][t].files ])
     
     ids = list(set([o.client_id for o in objects ]))
 
     return ids
 
 
-  def model_ids(self, groups=None, protocol='search_split1'):
+  def model_ids(self, groups=None, protocol='search_split1', purposes='enroll', model_ids=None):
     """Returns a list of model ids for the specific query by the user.
 
     Keyword Parameters:
@@ -210,24 +210,36 @@ class Database(bob.db.verification.utils.Database):
     protocol
       One of the available protocol names, see :py:meth:`protocol_names`.
 
+    purposes
+
     Returns: A list containing all the model ids for the given protocol.
     """
 
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
     groups = self.check_parameters_for_validity(groups, "group", self.groups())
-
-    #Just filling up the memory_db
-    
-    
+    purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])
+ 
+    ids = [] 
     if "search" in protocol:
-      self._load_data(protocol, "dev", "enroll")
-      self._load_data(protocol, "dev", "probe")      
-
-      ids = [t for t in self.memory_db[protocol]['enroll']]
-      ids.extend([t for t in self.memory_db[protocol]['probe']])
+      for p in purposes:
+        self._load_data(protocol, "dev", p)
+        ids.extend([t for t in self.memory_db[protocol][p]])
     else:
       self._load_data(protocol, "dev", "")
-      ids = [t for t in self.memory_db[protocol]['comparison-templates']]
+      for p in purposes:
+        
+        if p == "enroll":
+          for c in self.memory_db[protocol]['comparisons']:
+            ids.append(c)
+        else:
+          if(model_ids is None):
+            for c in self.memory_db[protocol]['comparisons']:
+              for probe in self.memory_db[protocol]['comparisons'][c]:
+                ids.append(probe)
+          else:
+            for c in model_ids:
+              for probe in self.memory_db[protocol]['comparisons'][c]:
+                ids.append(probe)
 
     return ids
 
@@ -280,7 +292,7 @@ class Database(bob.db.verification.utils.Database):
     objects = []
     if 'world' in groups:
       self._load_data(protocol, "world", "train")
-      objects.extend([o for t in self.memory_db[protocol]['train'] for o in self.memory_db[protocol]['train'][t] ])
+      objects.extend([o for t in self.memory_db[protocol]['train'] for o in self.memory_db[protocol]['train'][t].files ])
 
     if 'dev' in groups:
 
@@ -290,16 +302,16 @@ class Database(bob.db.verification.utils.Database):
           self._load_data(protocol, "dev", "enroll")
 
           if(model_ids is None):
-            objects.extend([o for t in self.memory_db[protocol]['enroll'] for o in self.memory_db[protocol]['enroll'][t]])
+            objects.extend([o for t in self.memory_db[protocol]['enroll'] for o in self.memory_db[protocol]['enroll'][t].files])
           else:
-            objects.extend([o for t in model_ids for o in self.memory_db[protocol]['enroll'][t]])
+            objects.extend([o for t in model_ids for o in self.memory_db[protocol]['enroll'][t].files])
           
         
         if 'probe' in purposes:
           self._load_data(protocol, "dev", "probe")
                     
           #The probes for the search are the same for all users          
-          objects.extend([o for t in self.memory_db[protocol]['probe'] for o in self.memory_db[protocol]['probe'][t]])
+          objects.extend([o for t in self.memory_db[protocol]['probe'] for o in self.memory_db[protocol]['probe'][t].files])
 
 
       #Dealing with comparisons
@@ -311,19 +323,22 @@ class Database(bob.db.verification.utils.Database):
  
           if model_ids is None:
             for c in self.memory_db[protocol]['comparisons']:
-              objects.extend(self.memory_db[protocol]['comparison-templates'][c])
+              objects.extend(self.memory_db[protocol]['comparison-templates'][c].files)
           else:
             for m in model_ids:
-              objects.extend(self.memory_db[protocol]['comparison-templates'][m])
+              objects.extend(self.memory_db[protocol]['comparison-templates'][m].files)
           
           
         if 'probe' in purposes:
           if(model_ids is None):
-            raise ValueError("`model_ids` parameter required for the protocol `{0}`. For the comparison protocols, each model has an specific set of probes.".format(protocol))
+            for t in self.memory_db[protocol]['comparison-templates']:
+              objects.extend(self.memory_db[protocol]['comparison-templates'][t].files)
+            #import ipdb; ipdb.set_trace();
+            #raise ValueError("`model_ids` parameter required for the protocol `{0}`. For the comparison protocols, each model has an specific set of probes.".format(protocol))
           else:
             for c in model_ids:
               for probe in self.memory_db[protocol]['comparisons'][c]:
-                objects.extend(self.memory_db[protocol]['comparison-templates'][probe])
+                objects.extend(self.memory_db[protocol]['comparison-templates'][probe].files)
 
 
     # we have collected all queries, now extract the File objects
@@ -355,15 +370,29 @@ class Database(bob.db.verification.utils.Database):
       Note that the images of the database will be ignored, when this option is selected.
     """
 
-    #TODO: SET purposes and group as IGNORED
-
     # check that every parameter is as expected
     #groups = self.check_parameters_for_validity(groups, "group", ["dev","world"])
-    #purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])    
-    protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
-    
+    purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])    
+    protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names()) 
 
-    return model_ids(self, protocol='search_split1')
+    templates = []
+    self._load_data(protocol, "dev", "enroll")
+    self._load_data(protocol, "dev", "probe")
+    for p in purposes:
+      for m in model_ids:
+        if "probe" in p:
+          template_ids = self.model_ids(groups="dev", protocol=protocol, purposes=p, model_ids=[m])
+          if "search" in protocol:
+            for t in template_ids:
+              templates.append(self.memory_db[protocol][p][t])
+          else:
+             for t in template_ids:
+               templates.append(self.memory_db[protocol]['comparison-templates'][t])
+              
+        else: 
+          templates.extend(self.memory_db[protocol][p][m])
+ 
+    return templates
 
 
 
