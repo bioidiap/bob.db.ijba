@@ -119,13 +119,13 @@ class Database(bob.db.verification.utils.Database):
         templates =                       get_templates(self._solve_filename(protocol,purpose))
         self.memory_db[protocol][purpose] = templates
 
-        self.templates                    =  dict(self.templates.items() + templates.items())
+        self.templates.update(templates)
     else:
       if not 'comparison-templates' in self.memory_db[protocol]:
         templates                                        = get_templates(self._solve_filename(protocol,""))
         self.memory_db[protocol]['comparison-templates'] = templates
         self.memory_db[protocol]['comparisons']          = get_comparisons(self._solve_comparisons(protocol))
-        self.templates                    =  dict(self.templates.items() + templates.items())
+        self.templates.update(templates)
 
 
 
