@@ -60,13 +60,6 @@ To fetch the object files using some protocol (let's say the first split), use t
    >>> 
 
 
-.. warning::  
-  
-  Not all files in the **training set** (world) contains the full annotations (eyes, nose and mouth positions, gender and so on).
-  This API only consider the files with the full annotations.
-  It is important to emphasize this design decision does not impact in the compatibility with the original protocol.
-
-
 
 Comparison protocols
 ====================
@@ -101,11 +94,6 @@ To fetch the object files using some protocol (let's say the first split), use t
   
   As mentioned in the beginning of this subsection, each template has their own probes.
   Hence, it is mandatory to set the keyword ```model_ids``` when fetch files from this protocol.
-
-.. warning::    
-  Not all files in the **training set** (world) contains the full annotations (eyes, nose and mouth positions, gender and so on).
-  This API only consider the files with the full annotations.
-  It is important to emphasize this design decision does not impact in the compatibility with the original protocol.
 
 
 
