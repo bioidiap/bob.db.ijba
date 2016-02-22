@@ -43,6 +43,7 @@ class Database(bob.db.verification.utils.Database):
     
     #Creating our data structure to deal with the db files
     self.memory_db = {}
+    self.templates = {} #Dictionary with the templates in a unique list
     self.annotations_directory = annotations_directory
     
     
@@ -115,11 +116,16 @@ class Database(bob.db.verification.utils.Database):
     #Special treatment for the comparison
     if "search" in protocol:
       if not purpose in self.memory_db[protocol]:
-        self.memory_db[protocol][purpose] = get_templates(self._solve_filename(protocol,purpose))
+        templates =                       get_templates(self._solve_filename(protocol,purpose))
+        self.memory_db[protocol][purpose] = templates
+
+        self.templates                    =  dict(self.templates.items() + templates.items())
     else:
       if not 'comparison-templates' in self.memory_db[protocol]:
-        self.memory_db[protocol]['comparison-templates'] = get_templates(self._solve_filename(protocol,""))
+        templates                                        = get_templates(self._solve_filename(protocol,""))
+        self.memory_db[protocol]['comparison-templates'] = templates
         self.memory_db[protocol]['comparisons']          = get_comparisons(self._solve_comparisons(protocol))
+        self.templates                    =  dict(self.templates.items() + templates.items())
 
 
 
@@ -421,6 +427,21 @@ class Database(bob.db.verification.utils.Database):
   def has_protocol(self, name):
     """Tells if a certain protocol is available"""
     return name in self.protocols()
+
+
+  def get_client_id_from_model_id(self, model_id):
+
+    # Since we don't have the protocol information we have to load them all
+    # TODO: Last minute solution for this problem, think in a better solution
+    for p in self.protocols():
+      if "search" in p:
+        self._load_data(p, "dev", "enroll")
+        self._load_data(p, "dev", "probe")
+      else:
+        self._load_data(p, "dev", "")
+  
+    return self.templates[model_id].client_id
+    
 
 
   def original_file_name(self, file, check_existence = True):
