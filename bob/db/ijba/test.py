@@ -51,7 +51,7 @@ def test01_search_clients():
 
 def test02_search_objects():
   # Checks the objects
-  db = bob.db.ijba.Database("./bob/db/ijba/data/")
+  db = bob.db.ijba.Database()
 
   # number of world files for the protocols (cf. the number of lines in the training file lists)
     
@@ -72,7 +72,7 @@ def test02_search_objects():
 
 def test03_comparison_objects():
   # Checks the objects
-  db = bob.db.ijba.Database("./bob/db/ijba/data/")
+  db = bob.db.ijba.Database()
 
   # number of world files for the protocols (cf. the number of lines in the training file lists)
   world_files = [16910, 16354, 17287, 16548, 17040, 17644, 17584, 16367, 17421 ,16910]

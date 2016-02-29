@@ -36,7 +36,7 @@ class Database(bob.db.verification.utils.Database):
   and for the data itself inside the database.
   """   
 
-  def __init__(self, original_directory = None, annotations_directory="./bob/db/ijba/data"):
+  def __init__(self, original_directory = None, annotations_directory=None):
   
     # call base class constructor
     bob.db.verification.utils.Database.__init__(self, original_directory=original_directory, original_extension=None)
@@ -44,6 +44,10 @@ class Database(bob.db.verification.utils.Database):
     #Creating our data structure to deal with the db files
     self.memory_db = {}
     self.templates = {} #Dictionary with the templates in a unique list
+    
+    if(annotations_directory is None):#Get the default location
+      annotations_directory = bob.db.ijba.driver.Interface().files()[0]
+    
     self.annotations_directory = annotations_directory
     
     
