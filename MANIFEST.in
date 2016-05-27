@@ -1,3 +1,2 @@
 include README.rst bootstrap-buildout.py buildout.cfg version.txt requirements.txt
 recursive-include doc *.py *.rst
-recursive-include bob *.sql3

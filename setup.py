@@ -32,23 +32,18 @@ setup(
 
     install_requires = install_requires,
 
-    namespace_packages = [
-      'bob',
-      'bob.db',
-    ],
-
     entry_points = {
       # bob database declaration
       'bob.db': [
         'ijba = bob.db.ijba.driver:Interface',
       ],
-      
+
       # scripts should be declared using this entry:
       'console_scripts' : [
         'evaluate_ijba.py     = bob.db.ijba.scripts.evaluate_ijba:main',
         'score_generation.py  = bob.db.ijba.scripts.score_generation:main'
       ],
-      
+
     },
 
     classifiers = [
