@@ -19,7 +19,7 @@ setup(
     name='bob.db.ijba',
     version=version,
     description='IJB-A Database Access API for Bob',
-    url='http://github.com/bioidiap/bob.db.ijba',
+    url='http://gitlab.idiap.ch/bob/bob.db.ijba',
     license='GPLv3',
     author='Tiago de Freitas Pereira',
     author_email='tiago.pereira@idiap.ch',
