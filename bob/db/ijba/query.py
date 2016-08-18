@@ -26,20 +26,21 @@ from bob.db.base import utils
 from .driver import Interface
 from .reader import get_templates, get_comparisons
 
-import bob.db.verification.utils
+import bob.db.base
 
 
-class Database(bob.db.verification.utils.Database):
+class Database(bob.db.base.Database):
   """The database class opens and maintains a connection opened to the Database.
 
   It provides many different ways to probe for the characteristics of the data
   and for the data itself inside the database.
   """   
 
-  def __init__(self, original_directory = None, annotations_directory=None):
+  def __init__(self, original_directory = None, annotations_directory=None, original_extension=None):
   
     # call base class constructor
-    bob.db.verification.utils.Database.__init__(self, original_directory=original_directory, original_extension=None)
+    self.original_directory = original_directory
+    self.original_extension = original_extension
     
     #Creating our data structure to deal with the db files
     self.memory_db = {}

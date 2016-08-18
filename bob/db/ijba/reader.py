@@ -23,7 +23,42 @@ from __future__ import print_function
 
 import os
 
-from bob.db.verification.utils import File
+import bob.db.base
+
+
+class File(bob.db.base.File):
+  """
+  IJBA File class
+  
+  Diferent from its ascendent class, this one has the client ID as input
+  
+  """
+  def __init__(self, client_id, path, file_id = None):
+    """**Constructor Documentation**
+
+    Initialize the File object with the minimum required data.
+
+    Parameters:
+
+    client_id : various type
+      The id of the client, this file belongs to.
+      The type of it is dependent on your implementation.
+      If you use an SQL database, this should be an SQL type like Integer or String.
+
+    path : str
+      The path of this file, relative to the basic directory.
+      If you use an SQL database, this should be the SQL type String.
+      Please do not specify any file extensions.
+
+    file_id : various type
+      The id of the file.
+      The type of it is dependent on your implementation.
+      If you use an SQL database, this should be an SQL type like Integer or String.
+      If you are using an automatically determined file id, you can skip selecting the file id.
+    """
+    super(File, self).__init__(path, file_id)
+    self.client_id = client_id
+    
 
 
 class Template():

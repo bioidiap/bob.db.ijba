@@ -4,5 +4,4 @@ bob.core
 bob.blitz
 bob.io.base
 bob.db.base
-bob.db.verification.utils
 docopt
