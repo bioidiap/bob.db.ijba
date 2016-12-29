@@ -1,26 +1,9 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
-# Tiago de Freitas Pereira <tiago.pereira@idiap.ch>
-# Thu 12 Nov 2015 16:35:08 CET 
-#
-# Copyright (C) 2011-2013 Idiap Research Institute, Martigny, Switzerland
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, version 3 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the ipyplotied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import print_function
 
-"""This script evaluates the given score files and computes EER, HTER.
-It also is able to plot CMC and ROC curves."""
+"Evaluates the score files and computes EER, HTER and plots CMC and ROC curves"
 
 import bob.measure
 
@@ -95,14 +78,14 @@ def command_line_arguments(command_line_parameters):
 def _plot_roc(scores_input, colors, labels, title, fontsize=18, position=None):
   if position is None: position = 4
   figure = pyplot.figure()
-    
+
   logger.info("Computing CAR curves on the development " )
-  fars = [math.pow(10., i * 0.25) for i in range(-16,0)] + [1.] 
+  fars = [math.pow(10., i * 0.25) for i in range(-16,0)] + [1.]
   frrs = [bob.measure.roc_for_far(scores[0], scores[1], fars) for scores in scores_input]
-   
+
   offset = 0
   step   = int(len(scores_input)/len(labels))
- 
+
   #For each group of labels
   for i in range(len(labels)):
 
@@ -113,13 +96,13 @@ def _plot_roc(scores_input, colors, labels, title, fontsize=18, position=None):
       fars_accumulator[j-i*step,:] = frrs[j][1]
 
     frr_average = numpy.mean(frrs_accumulator, axis=0)
-    far_average = numpy.mean(fars_accumulator, axis=0); far_std = numpy.std(fars_accumulator, axis=0)    
+    far_average = numpy.mean(fars_accumulator, axis=0); far_std = numpy.std(fars_accumulator, axis=0)
 
     pyplot.semilogx(frr_average*100, 100. - 100.0*far_average, color=colors[i], lw=2, ms=10, mew=1.5, label=labels[i])
-    pyplot.errorbar(frr_average*100, 100. - 100.0*far_average, far_std*100, lw=0.5, ms=10)    
-    
+    pyplot.errorbar(frr_average*100, 100. - 100.0*far_average, far_std*100, lw=0.5, ms=10)
+
     offset += step
-    
+
   # plot FAR and CAR for each algorithm
   #for i in range(len(frrs)):
     #pyplot.semilogx([100.0*f for f in frrs[i][0]], [100. - 100.0*f for f in frrs[i][1]], color=colors[i+1], lw=0.5, ls='--', ms=10, mew=1.5, label=str(i))
@@ -143,7 +126,7 @@ def _plot_det(scores_input, colors, labels, title, fontsize=18, position=None):
   figure = pyplot.figure(figsize=(8.2,8))
 
   dets = [bob.measure.det(scores[0], scores[1], 1000) for scores in scores_input]
-  
+
   offset = 0
   step   = int(len(scores_input)/len(labels))
 
@@ -161,7 +144,7 @@ def _plot_det(scores_input, colors, labels, title, fontsize=18, position=None):
     pyplot.plot(frr_average, far_average, color=colors[i], lw=2, ms=10, mew=1.5, label=labels[i])
     pyplot.errorbar(frr_average, far_average, far_std, lw=0.5, ms=10)
     offset += step
-  
+
   # plot the DET curves
   #for i in range(len(dets)):
     #pyplot.plot(dets[i][0], dets[i][1], color=colors[i], lw=0.5, ls="--", ms=10, mew=1.5, label=str(i))
@@ -185,14 +168,14 @@ def _plot_cmc(cmcs, colors, labels, title, fontsize=18, position=None):
   if position is None: position = 4
   # open new page for current plot
   figure = pyplot.figure()
-  
+
   offset = 0
   step   = int(len(cmcs)/len(labels))
- 
+
   #For each group of labels
   max_x   =  0 #Maximum CMC size
   for i in range(len(labels)):
-  
+
     #Computing the CMCs
     cmc_curves = []
     for j in range(offset,offset+step):
@@ -207,10 +190,10 @@ def _plot_cmc(cmcs, colors, labels, title, fontsize=18, position=None):
       #cmc_average  += numpy.pad(cmc_curves[j],(0,padding_diff), 'constant',constant_values=(1))
     cmc_std     = numpy.std(cmc_accumulator, axis=0); cmc_std[-1]
     cmc_average = numpy.mean(cmc_accumulator, axis=0)
-    
+
     pyplot.semilogx(range(1, cmc_average.shape[0]+1), cmc_average * 100, lw=2, ms=10, mew=1.5, label=labels[i])
     pyplot.errorbar(range(1, cmc_average.shape[0]+1), cmc_average*100, cmc_std*100, lw=0.5, ms=10)
-    offset += step    
+    offset += step
 
   # change axes accordingly
   ticks = [int(t) for t in pyplot.xticks()[0]]

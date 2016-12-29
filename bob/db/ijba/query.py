@@ -1,19 +1,5 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
-# @author: Manuel Gunther <mgunther@vast.uccs.edu>
-# @date:   Fri Sep 11 14:53:52 MDT 2015
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, version 3 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module provides the Database interface allowing the user to query the JANUS database.
 """
@@ -34,29 +20,29 @@ class Database(bob.db.base.Database):
 
   It provides many different ways to probe for the characteristics of the data
   and for the data itself inside the database.
-  """   
+  """
 
   def __init__(self, original_directory = None, annotations_directory=None, original_extension=None):
-  
+
     # call base class constructor
     self.original_directory = original_directory
     self.original_extension = original_extension
-    
+
     #Creating our data structure to deal with the db files
     self.memory_db = {}
     self.templates = {} #Dictionary with the templates in a unique list
-    
+
     if(annotations_directory is None):#Get the default location
       annotations_directory = bob.db.ijba.driver.Interface().files()[0]
-    
+
     self.annotations_directory = annotations_directory
-    
-    
+
+
   def _solve_comparisons(self, protocol):
     """
     Given a protocol, try to solve the filename verify_comparisons_[n].csv where n is the split number
     """
-  
+
     relative_dir = "IJB-A_11_sets"
 
     #Getting the split
@@ -65,23 +51,23 @@ class Database(bob.db.base.Database):
       if(split in protocol):
         relative_dir = os.path.join(self.annotations_directory,relative_dir,split,"verify_comparisons_{0}.csv".format(i))
         break
-        
+
     return relative_dir
-  
+
 
   def _solve_filename(self, protocol, purpose):
     """
     Given a protocol and the purpose, try to solve the filename
     """
-        
+
     relative_dir = ""
-    
+
     #Getting the recognition task
     if("search" in protocol):
       relative_dir = "IJB-A_1N_sets"
     else:
       relative_dir = "IJB-A_11_sets"
-      
+
     #Getting the split
     for i in range(1,10):
       split = "split{0}".format(i)
@@ -89,7 +75,7 @@ class Database(bob.db.base.Database):
         relative_dir = os.path.join(relative_dir,split)
         split_number = i
         break
-        
+
     #Getting the file
     if purpose=="train":
       return os.path.join(self.annotations_directory, relative_dir,"train_{0}.csv".format(split_number))
@@ -99,7 +85,7 @@ class Database(bob.db.base.Database):
         return os.path.join(self.annotations_directory,relative_dir,"search_gallery_{0}.csv".format(split_number))
       else:
         return os.path.join(self.annotations_directory,relative_dir,"search_probe_{0}.csv".format(split_number))
-      
+
     else:
       #comparison
       return os.path.join(self.annotations_directory, relative_dir,"verify_metadata_{0}.csv".format(split_number))
@@ -111,7 +97,7 @@ class Database(bob.db.base.Database):
     """
 
     if not protocol in self.memory_db:
-      self.memory_db[protocol] = {}                
+      self.memory_db[protocol] = {}
 
     #Training set is the same for both major protocols (search and comparison)
     if purpose=="train":
@@ -197,15 +183,15 @@ class Database(bob.db.base.Database):
     if "search" in protocol:
       objects = self.objects(groups=groups, protocol=protocol)
     else:
-    
+
       objects = []
-      for g in groups:    
+      for g in groups:
           if g == "world":
             objects.extend(self.objects(groups=g, protocol=protocol))
           else:
             self._load_data(protocol, "dev", "")
             objects.extend([o for t in self.memory_db[protocol]['comparison-templates'] for o in self.memory_db[protocol]['comparison-templates'][t].files ])
-    
+
     ids = list(set([o.client_id for o in objects ]))
 
     return ids
@@ -230,8 +216,8 @@ class Database(bob.db.base.Database):
     protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
     groups = self.check_parameters_for_validity(groups, "group", self.groups())
     purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])
- 
-    ids = [] 
+
+    ids = []
     if "search" in protocol:
       for p in purposes:
         self._load_data(protocol, "dev", p)
@@ -239,7 +225,7 @@ class Database(bob.db.base.Database):
     else:
       self._load_data(protocol, "dev", "")
       for p in purposes:
-        
+
         if p == "enroll":
           for c in self.memory_db[protocol]['comparisons']:
             ids.append(c)
@@ -262,7 +248,7 @@ class Database(bob.db.base.Database):
 
     This function returns a list of actual template_ids.
     The according templates might differ between the protocols.
-    """    
+    """
     return self.model_ids(protocol)
 
 
@@ -317,30 +303,30 @@ class Database(bob.db.base.Database):
             objects.extend([o for t in self.memory_db[protocol]['enroll'] for o in self.memory_db[protocol]['enroll'][t].files])
           else:
             objects.extend([o for t in model_ids for o in self.memory_db[protocol]['enroll'][t].files])
-          
-        
+
+
         if 'probe' in purposes:
           self._load_data(protocol, "dev", "probe")
-                    
-          #The probes for the search are the same for all users          
+
+          #The probes for the search are the same for all users
           objects.extend([o for t in self.memory_db[protocol]['probe'] for o in self.memory_db[protocol]['probe'][t].files])
 
 
       #Dealing with comparisons
       else:
-              
+
         self._load_data(protocol, "dev", "")
-        
+
         if 'enroll' in purposes:
- 
+
           if model_ids is None:
             for c in self.memory_db[protocol]['comparisons']:
               objects.extend(self.memory_db[protocol]['comparison-templates'][c].files)
           else:
             for m in model_ids:
               objects.extend(self.memory_db[protocol]['comparison-templates'][m].files)
-          
-          
+
+
         if 'probe' in purposes:
           if(model_ids is None):
             for t in self.memory_db[protocol]['comparison-templates']:
@@ -384,8 +370,8 @@ class Database(bob.db.base.Database):
 
     # check that every parameter is as expected
     #groups = self.check_parameters_for_validity(groups, "group", ["dev","world"])
-    purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])    
-    protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names()) 
+    purposes = self.check_parameters_for_validity(purposes, "purpose", ["enroll","probe"])
+    protocol = self.check_parameter_for_validity(protocol, "protocol", self.protocol_names())
 
     templates = []
     self._load_data(protocol, "dev", "enroll")
@@ -400,10 +386,10 @@ class Database(bob.db.base.Database):
           else:
              for t in template_ids:
                templates.append(self.memory_db[protocol]['comparison-templates'][t])
-              
-        else: 
+
+        else:
           templates.extend(self.memory_db[protocol][p][m])
- 
+
     return templates
 
 
@@ -423,7 +409,7 @@ class Database(bob.db.base.Database):
     """Returns all possible protocols."""
 
     protocol_choices = ['search_split%d' % d for d in range(1,11)]
-    protocol_choices += ['compare_split%d' % d for d in range(1,11)]  
+    protocol_choices += ['compare_split%d' % d for d in range(1,11)]
 
     return protocol_choices
 
@@ -444,9 +430,9 @@ class Database(bob.db.base.Database):
         self._load_data(p, "dev", "probe")
       else:
         self._load_data(p, "dev", "")
-  
+
     return self.templates[model_id].client_id
-    
+
 
 
   def original_file_name(self, file, check_existence = True):
