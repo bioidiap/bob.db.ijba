@@ -18,3 +18,4 @@ build
 *.egg
 src/
 db.sql3
+bob/db/ijba/data/

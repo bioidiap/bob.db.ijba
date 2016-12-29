@@ -1,19 +1,5 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
-# @author: Tiago de Freitas Pereira <tiago.pereira@idiap.ch>
-# @date:   Thu 18 Feb 2016 15:23:45 CET 
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, version 3 of the License.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 This script has some sort of utilitary functions that parses the original database files
@@ -29,9 +15,9 @@ import bob.db.base
 class File(bob.db.base.File):
   """
   IJBA File class
-  
+
   Diferent from its ascendent class, this one has the client ID as input
-  
+
   """
   def __init__(self, client_id, path, file_id = None):
     """**Constructor Documentation**
@@ -58,20 +44,33 @@ class File(bob.db.base.File):
     """
     super(File, self).__init__(path, file_id)
     self.client_id = client_id
-    
 
 
-class Template():
-  """A ``Template`` contains a list of :py:class:`File` objects belonging to the same subject (there might be several templates per subject).
+
+class Template:
+  """A ``Template`` contains a list of :py:class:`File` objects belonging to
+  the same subject (there might be several templates per subject).
+
   These are listed in the ``self.files`` field.
+
   A ``Template`` can serve for training, model enrollment, or for probing.
-  Each template belongs specifically to a certain protocol, as the template_id in the original file lists might differ for different protocols.
-  The according :py:class:`ProtocolPurpose` can be obtained using the ``self.protocol_purpose`` after creation of the database.
-  Note that the ``template_id`` corresponds to the template_id of the file lists, while the ``id`` is only used as a un
-ique key for querying the database.
-  For convenience, the template also contains a ``path``, which is a concatenation of the first :py:attr:`File.media_id
-` of the first file, and the ``self.template_id``, making it unique (at least per protocol).
+
+  Each template belongs specifically to a certain protocol, as the template_id
+  in the original file lists might differ for different protocols.
+
+  The protocol purpose can be obtained using ``self.protocol_purpose`` after
+  creation of the database.
+
+  Note that the ``template_id`` corresponds to the template_id of the file
+  lists, while the ``id`` is only used as a unique key for querying the
+  database.
+
+  For convenience, the template also contains a ``path``, which is a
+  concatenation of the ``File.media_id`` of the first file, and the
+  ``self.template_id``, making it unique (at least per protocol).
+
   """
+
   def __init__(self, template_id, subject_id, files):
     self.id = template_id
     self.client_id   = subject_id
@@ -82,13 +81,13 @@ ique key for querying the database.
 
 def read_file(filename):
   """Reads the given file and yields the template id, the subject id and path_id (path + sighting_id)"""
-    
+
   with open(filename) as f:
     # skip the first line
     _ = f.readline()
     for line in f:
       splits = line.rstrip().split(',')
-      
+
       assert len(splits) == 25
 
 
@@ -103,10 +102,10 @@ def read_file(filename):
       #Creating the file object and binding the annotations directly to the object
       file_obj = File(client_id, path, file_id)
       annotations = read_annotations(splits[6:])
-      
+
       file_obj.annotations = annotations
       file_obj.extension   = extension
-      file_obj.media_id    = splits[3]        
+      file_obj.media_id    = splits[3]
 
       yield template_id, client_id, file_obj
 
@@ -121,7 +120,7 @@ def get_comparisons(filename):
 
   for line in lines:
 
-    splits = line.rstrip().split(',')      
+    splits = line.rstrip().split(',')
     assert len(splits) == 2
 
     template_A = int(splits[0])
@@ -131,33 +130,33 @@ def get_comparisons(filename):
       template_comparisons[template_A] = [template_B]
     else:
       template_comparisons[template_A].append(template_B)
-      
+
   return template_comparisons
-  
+
 
 
 def get_templates(filename,  verbose=True):
   """
   Given a IJBA file, get a dictionary with all their templates with their respective files in the following format:
-  
-  
+
+
   templates['template_01'] = [file_01, file_02, file_03]
   templates['template_02'] = [file_01, file_02, file_03]
   .
   .
   .
-  
-  """  
+
+  """
 
   templates       = {}
   for template_id, client_id, file_obj in read_file(filename):
 
-    # create template with given IDs 
+    # create template with given IDs
     if template_id not in templates:
       templates[template_id] = Template(template_id,client_id,[file_obj])
     else:
       templates[template_id].files.append(file_obj)
-    
+
   return templates
 
 
@@ -181,7 +180,7 @@ def read_annotations(raw_annotations):
   n_x    = float(raw_annotations[8]) if raw_annotations[8]!='' else None
   n_y    = float(raw_annotations[9]) if raw_annotations[9]!='' else None
   yaw    = float(raw_annotations[10]) if raw_annotations[10]!='' else None
-    
+
   forehead = raw_annotations[17-6]
   eyes     = raw_annotations[18-6]
   nm       = raw_annotations[19-6]

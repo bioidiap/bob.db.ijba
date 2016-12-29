@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
-# author: Manuel Guenther <manuel.guenther@idiap.ch>
-# date:   Wed Feb 13 12:35:29 CET 2013
 
 from setuptools import setup, find_packages, dist
 dist.Distribution(dict(setup_requires=['bob.extension']))
@@ -19,7 +17,7 @@ setup(
     name='bob.db.ijba',
     version=version,
     description='IJB-A Database Access API for Bob',
-    url='http://gitlab.idiap.ch/bob/bob.db.ijba',
+    url='https://gitlab.idiap.ch/bob/bob.db.ijba',
     license='BSD',
     author='Tiago de Freitas Pereira',
     author_email='tiago.pereira@idiap.ch',
