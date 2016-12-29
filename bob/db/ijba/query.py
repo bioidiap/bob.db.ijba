@@ -33,7 +33,8 @@ class Database(bob.db.base.Database):
     self.templates = {} #Dictionary with the templates in a unique list
 
     if(annotations_directory is None):#Get the default location
-      annotations_directory = bob.db.ijba.driver.Interface().files()[0]
+      import pkg_resources
+      annotations_directory = pkg_resources.resource_filename(__name__, 'data')
 
     self.annotations_directory = annotations_directory
 
@@ -395,8 +396,10 @@ class Database(bob.db.base.Database):
 
 
   def annotations(self, file):
-    """Returns the annotations for the given :py:class:`File` object as a dictionary, see :py:class:`Annotation` for details."""
-    # return annotations as obtained from the __call__ command of the Annotation class
+    """Returns the annotations for the given :py:class:`File` object as a
+    dictionary, see :py:func:`read_annotations` for details.
+    """
+
     return file.annotations
 
 

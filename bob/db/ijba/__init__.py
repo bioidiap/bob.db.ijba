@@ -5,7 +5,7 @@
 """
 
 from .query import Database
-from .reader import get_templates
+from .reader import File, Template, get_templates, read_annotations
 
 
 def get_config():
@@ -30,7 +30,10 @@ def __appropriate__(*args):
 
 __appropriate__(
     Database,
+    File,
+    Template,
     get_templates,
+    read_annotations,
     )
 
 __all__ = [_ for _ in dir() if not _.startswith('_')]

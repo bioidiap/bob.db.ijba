@@ -47,17 +47,30 @@ class File(bob.db.base.File):
 
 
 
-class Template():
-  """A ``Template`` contains a list of :py:class:`File` objects belonging to the same subject (there might be several templates per subject).
+class Template:
+  """A ``Template`` contains a list of :py:class:`File` objects belonging to
+  the same subject (there might be several templates per subject).
+
   These are listed in the ``self.files`` field.
+
   A ``Template`` can serve for training, model enrollment, or for probing.
-  Each template belongs specifically to a certain protocol, as the template_id in the original file lists might differ for different protocols.
-  The according :py:class:`ProtocolPurpose` can be obtained using the ``self.protocol_purpose`` after creation of the database.
-  Note that the ``template_id`` corresponds to the template_id of the file lists, while the ``id`` is only used as a un
-ique key for querying the database.
-  For convenience, the template also contains a ``path``, which is a concatenation of the first :py:attr:`File.media_id
-` of the first file, and the ``self.template_id``, making it unique (at least per protocol).
+
+  Each template belongs specifically to a certain protocol, as the template_id
+  in the original file lists might differ for different protocols.
+
+  The protocol purpose can be obtained using ``self.protocol_purpose`` after
+  creation of the database.
+
+  Note that the ``template_id`` corresponds to the template_id of the file
+  lists, while the ``id`` is only used as a unique key for querying the
+  database.
+
+  For convenience, the template also contains a ``path``, which is a
+  concatenation of the ``File.media_id`` of the first file, and the
+  ``self.template_id``, making it unique (at least per protocol).
+
   """
+
   def __init__(self, template_id, subject_id, files):
     self.id = template_id
     self.client_id   = subject_id

@@ -69,6 +69,3 @@ def test03_comparison_objects():
   enroll_files = [4260, 4765, 3995, 4458, 4216, 3875, 4137, 4556, 3922, 4260]
   for i in range(10):
     assert len(db.objects(groups='dev', purposes='enroll', protocol=COMPARISON_PROTOCOLS[i])) == enroll_files[i]
-
-
-
