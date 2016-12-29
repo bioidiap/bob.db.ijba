@@ -13,34 +13,43 @@
    :target: https://pypi.python.org/pypi/bob.db.ijba
 .. image:: http://img.shields.io/pypi/dm/bob.db.ijba.png
    :target: https://pypi.python.org/pypi/bob.db.ijba
-.. image:: https://img.shields.io/badge/original-data--files-a000a0.png
-   :target: http://www.nist.gov/itl/iad/ig/ijba_request.cfm
 
 
-=================================
+==================================
  IJB-A Database Interface for Bob
-=================================
+==================================
 
 This package is part of the signal-processing and machine learning toolbox
-Bob_.
-This package contains an interface for the evaluation protocols of the *IARPA Janus Benchmark A* (IJB-A) database and does not contain the original image data for the database.
-The original data should be obtained using the link above.
+Bob_.  This package contains an interface for the evaluation protocols of the
+`IARPA Janus Benchmark A (IJB-A) database`_ and does not contain the original
+image data for the database.  The original data should be obtained using the
+link above.
 
-The IJB-A database is a mixture of frontal and non-frontal images and videos (provided as single frames) from 500 different identities.
-In many of the images and video frames, there are several people visible, but only the ones that are annotated with a bounding box should be taken into consideration.
-For both model enrollment as well as for probing, images and video frames of one person are combined into so-called Templates.
+The IJB-A database is a mixture of frontal and non-frontal images and videos
+(provided as single frames) from 500 different identities.  In many of the
+images and video frames, there are several people visible, but only the ones
+that are annotated with a bounding box should be taken into consideration.  For
+both model enrollment as well as for probing, images and video frames of one
+person are combined into so-called Templates.
 
-The database is divided in 10 splits each defining training, enrollment and probe data.
+The database is divided in 10 splits each defining training, enrollment and
+probe data.
 
-This package implements the database interface including all its particularities:
+This package implements the database interface including all its
+particularities:
 
-- First, it implements the FileSet protocol, since for some probes, several files (a mixture of images and video frames) are defined.
-  In the Database.object_sets() function, FileSet objects are only returned for probe purposes.
-- Second, some images contain several identities. Therefore, every physical image file can be stored in several File objects.
-  Also, the File.make_path() function can create two different styles of file names: the original file name (to read original images), or a unique filename (to define a unique name for each extracted face).
-- Third, the Templates with the same template_id might differ between the protocols, so that the Template.template_id is **not** unique.
-  On the other hand, the Template.id is used as a unique key to query the SQL database.
-
+- First, it implements the FileSet protocol, since for some probes, several
+  files (a mixture of images and video frames) are defined. In the
+  Database.object_sets() function, FileSet objects are only returned for probe
+  purposes.
+- Second, some images contain several identities. Therefore, every physical
+  image file can be stored in several File objects. Also, the File.make_path()
+  function can create two different styles of file names: the original file
+  name (to read original images), or a unique filename (to define a unique name
+  for each extracted face).
+- Third, the Templates with the same template_id might differ between the
+  protocols, so that the Template.template_id is **not** unique. On the other
+  hand, the Template.id is used as a unique key to query the SQL database.
 
 
 Installation
@@ -64,3 +73,4 @@ development `mailing list`_.
 .. _bob: https://www.idiap.ch/software/bob
 .. _installation: https://gitlab.idiap.ch/bob/bob/wikis/Installation
 .. _mailing list: https://groups.google.com/forum/?fromgroups#!forum/bob-devel
+.. _iarpa janus benchmark a (ijb-a) database: http://www.nist.gov/itl/iad/ig/ijba_request.cfm

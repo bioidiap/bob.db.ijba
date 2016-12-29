@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
 
-"""This is the Bob database entry for the JANUS database.
+"""This is the Bob database entry for the IJB-A database.
 """
 
 from .query import Database

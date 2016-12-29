@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
 
-"""This module provides the Database interface allowing the user to query the JANUS database.
+"""Database interface allowing the user to query the IJB-A database.
 """
 
 import os
