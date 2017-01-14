@@ -1,17 +1,17 @@
 .. vim: set fileencoding=utf-8 :
 .. Thu 18 Aug 13:44:41 CEST 2016
 
-.. image:: http://img.shields.io/badge/docs-stable-yellow.png
+.. image:: http://img.shields.io/badge/docs-stable-yellow.svg
    :target: http://pythonhosted.org/bob.db.ijba/index.html
-.. image:: http://img.shields.io/badge/docs-latest-orange.png
+.. image:: http://img.shields.io/badge/docs-latest-orange.svg
    :target: https://www.idiap.ch/software/bob/docs/latest/bob/bob.db.ijba/master/index.html
 .. image:: https://gitlab.idiap.ch/bob/bob.db.ijba/badges/master/build.svg
    :target: https://gitlab.idiap.ch/bob/bob.db.ijba/commits/master
 .. image:: https://img.shields.io/badge/gitlab-project-0000c0.svg
    :target: https://gitlab.idiap.ch/bob/bob.db.ijba
-.. image:: http://img.shields.io/pypi/v/bob.db.ijba.png
+.. image:: http://img.shields.io/pypi/v/bob.db.ijba.svg
    :target: https://pypi.python.org/pypi/bob.db.ijba
-.. image:: http://img.shields.io/pypi/dm/bob.db.ijba.png
+.. image:: http://img.shields.io/pypi/dm/bob.db.ijba.svg
    :target: https://pypi.python.org/pypi/bob.db.ijba
 
 
@@ -71,6 +71,6 @@ development `mailing list`_.
 
 .. Place your references here:
 .. _bob: https://www.idiap.ch/software/bob
-.. _installation: https://gitlab.idiap.ch/bob/bob/wikis/Installation
+.. _installation: https://www.idiap.ch/software/bob/install
 .. _mailing list: https://groups.google.com/forum/?fromgroups#!forum/bob-devel
 .. _iarpa janus benchmark a (ijb-a) database: http://www.nist.gov/itl/iad/ig/ijba_request.cfm
