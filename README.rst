@@ -72,5 +72,5 @@ development `mailing list`_.
 .. Place your references here:
 .. _bob: https://www.idiap.ch/software/bob
 .. _installation: https://www.idiap.ch/software/bob/install
-.. _mailing list: https://groups.google.com/forum/?fromgroups#!forum/bob-devel
+.. _mailing list: https://www.idiap.ch/software/bob/discuss
 .. _iarpa janus benchmark a (ijb-a) database: http://www.nist.gov/itl/iad/ig/ijba_request.cfm
