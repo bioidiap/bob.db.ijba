@@ -22,9 +22,8 @@ How to build the database?
 
 .. code-block:: bash
 
-    python bootstrap-buildout.py
-    ./bin/buildout
-    ./bin/bob_dbmanage.py ijba download #The database file is too big, so it is not possible to upload on pypi
+    buildout
+    bob_dbmanage.py ijba download #The database file is too big, so it is not possible to upload on pypi
 
 
 The Database Protocols
@@ -106,7 +105,7 @@ To do so, run the following command:
 
 .. code-block:: bash
 
-    ./bin/score_generation.py <input-score-file> <output-score-file> [--template-size=<n>]
+    score_generation.py <input-score-file> <output-score-file> [--template-size=<n>]
 
 
 NIST specific plots
@@ -117,7 +116,7 @@ Type the following code to have more information on how to generate these plots.
 
 .. code-block:: bash
 
-  ./bin/evaluate_ijba.py --help
+  evaluate_ijba.py --help
 
 
 The image bellow is the averege CMC curve, for the search protocol, with its standard deviation along the 10 splits:
