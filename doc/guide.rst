@@ -22,7 +22,6 @@ How to build the database?
 
 .. code-block:: bash
 
-    buildout
     bob_dbmanage.py ijba download #The database file is too big, so it is not possible to upload on pypi
 
 
