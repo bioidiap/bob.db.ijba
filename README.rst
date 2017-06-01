@@ -5,10 +5,10 @@
    :target: http://pythonhosted.org/bob.db.ijba/index.html
 .. image:: http://img.shields.io/badge/docs-latest-orange.svg
    :target: https://www.idiap.ch/software/bob/docs/latest/bob/bob.db.ijba/master/index.html
-.. image:: https://gitlab.idiap.ch/bob/bob.db.ijba/badges/master/build.svg
-   :target: https://gitlab.idiap.ch/bob/bob.db.ijba/commits/master
-.. image:: https://gitlab.idiap.ch/bob/bob.db.ijba/badges/master/coverage.svg
-   :target: https://gitlab.idiap.ch/bob/bob.db.ijba/commits/master
+.. image:: https://gitlab.idiap.ch/bob/bob.db.ijba/badges/v2.0.2/build.svg
+   :target: https://gitlab.idiap.ch/bob/bob.db.ijba/commits/v2.0.2
+.. image:: https://gitlab.idiap.ch/bob/bob.db.ijba/badges/v2.0.2/coverage.svg
+   :target: https://gitlab.idiap.ch/bob/bob.db.ijba/commits/v2.0.2
 .. image:: https://img.shields.io/badge/gitlab-project-0000c0.svg
    :target: https://gitlab.idiap.ch/bob/bob.db.ijba
 .. image:: http://img.shields.io/pypi/v/bob.db.ijba.svg
