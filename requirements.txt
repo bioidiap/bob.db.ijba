@@ -3,5 +3,6 @@ bob.extension
 bob.core
 bob.blitz
 bob.io.base
+bob.io.image
 bob.db.base
 docopt
