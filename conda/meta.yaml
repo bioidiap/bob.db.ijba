@@ -18,6 +18,7 @@ build:
     - python setup.py sdist --formats=zip
     {% endif %}
     - python setup.py install --single-version-externally-managed --record record.txt
+    - bob_dbmanage.py {{ name.replace('bob.db.', '') }} download --missing
 
 requirements:
   host:
