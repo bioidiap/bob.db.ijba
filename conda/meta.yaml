@@ -29,6 +29,7 @@ requirements:
     - bob.blitz
     - bob.io.base
     - bob.db.base
+    - bob.measure
     - docopt {{ docopt }}
   run:
     - python
@@ -48,6 +49,7 @@ test:
     - conda inspect objects -p $PREFIX {{ name }}  # [osx]
   requires:
     - bob-devel {{ bob_devel }}.*
+    - bob.measure
     - nose
     - coverage
     - sphinx
