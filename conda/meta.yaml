@@ -47,7 +47,6 @@ test:
     - conda inspect objects -p $PREFIX {{ name }}  # [osx]
   requires:
     - bob-devel {{ bob_devel }}.*
-    - bob.measure
     - nose
     - coverage
     - sphinx
