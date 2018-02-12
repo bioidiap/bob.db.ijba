@@ -7,7 +7,6 @@ package:
 
 build:
   entry_points:
-    - evaluate_ijba.py     = bob.db.ijba.scripts.evaluate_ijba:main
     - score_generation.py  = bob.db.ijba.scripts.score_generation:main
   number: {{ environ.get('BOB_BUILD_NUMBER', 0) }}
   run_exports:
@@ -29,6 +28,7 @@ requirements:
     - bob.blitz
     - bob.io.base
     - bob.db.base
+    - bob.measure
     - docopt {{ docopt }}
   run:
     - python
@@ -39,7 +39,6 @@ test:
   imports:
     - {{ name }}
   commands:
-    - evaluate_ijba.py --help
     - score_generation.py --help
     - nosetests --with-coverage --cover-package={{ name }} -sv {{ name }}
     - sphinx-build -aEW {{ project_dir }}/doc {{ project_dir }}/sphinx
@@ -48,6 +47,7 @@ test:
     - conda inspect objects -p $PREFIX {{ name }}  # [osx]
   requires:
     - bob-devel {{ bob_devel }}.*
+    - bob.measure
     - nose
     - coverage
     - sphinx
