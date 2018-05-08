@@ -5,5 +5,6 @@ bob.blitz
 bob.io.base
 bob.io.image
 bob.db.base
+bob.bio.base
 bob.measure
 docopt
