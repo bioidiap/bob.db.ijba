@@ -99,7 +99,7 @@ NIST Score Generation
 =====================
 
 NIST has a specific file format to encode the scores of the comparisons.
-This package contains a feature to convert the Bob 4 column format (`bob.measure.load.four_column`) to the NIST format. 
+This package contains a feature to convert the Bob 4 column format (`bob.bio.base.score.load.four_column`) to the NIST format. 
 To do so, run the following command:
 
 .. code-block:: bash
