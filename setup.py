@@ -37,9 +37,7 @@ setup(
       ],
 
       # scripts should be declared using this entry:
-      'console_scripts' : [
-        'score_generation.py  = bob.db.ijba.scripts.score_generation:main'
-      ],
+      'console_scripts' : [],
 
     },
 

@@ -28,7 +28,6 @@ requirements:
     - bob.blitz
     - bob.io.base
     - bob.db.base
-    - bob.bio.base
     - bob.measure
     - docopt {{ docopt }}
   run:

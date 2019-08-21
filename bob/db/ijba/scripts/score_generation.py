@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf-8 :
 
-"""Converts the 4 columns score format to the NIST format.
+"""
+WARNING!!!! THIS IS DEPRECATED
+
+Converts the 4 columns score format to the NIST format.
 
 Each row of the NIST format is composed of the following fields:
 
